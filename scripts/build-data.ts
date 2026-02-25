@@ -14,15 +14,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'csv-parse/sync';
-import shp from 'shpjs';
+import * as shapefile from 'shapefile';
+import AdmZip from 'adm-zip';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
-import { point, type Feature, type FeatureCollection, type Polygon, type MultiPolygon } from 'geojson';
+import { point } from '@turf/helpers';
+import type { Feature, FeatureCollection, Polygon, MultiPolygon } from 'geojson';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const RAW_DIR = path.join(DATA_DIR, 'raw');
 
-// Rhode Island bounding box (approximate)
-const RI_BBOX = { minLon: -71.9, maxLon: -71.0, minLat: 41.1, maxLat: 42.0 };
+// Rhode Island bounding box (generous, includes Block Island and northern Woonsocket)
+const RI_BBOX = { minLon: -72.1, maxLon: -70.7, minLat: 40.9, maxLat: 42.3 };
 const RI_STATE_FIPS = '44';
 const RI_STATE_ABBR = 'RI';
 
@@ -61,7 +63,7 @@ interface SchoolProperties {
   lon: number;
   district_geoid?: string;
   district_name?: string;
-  source: 'NCES_CCD' | 'NCES_PSS';
+  source: string;
   nces_id?: string;
   pss_id?: string;
 }
@@ -111,16 +113,18 @@ async function ensureRawFiles(opts?: { skipDistricts?: boolean }): Promise<{
   const edgeDistrictZip = path.join(RAW_DIR, 'EDGE_SCHOOLDISTRICT_TL22_SY2122.zip');
   const publicZip = path.join(RAW_DIR, 'EDGE_GEOCODE_PUBLICSCH_2223.zip');
   const privateZip = path.join(RAW_DIR, 'pss2122_pu_csv.zip');
+  const publicSchoolsGeojsonExists = fs.existsSync(path.join(DATA_DIR, 'public_schools.geojson'));
+  const privateSchoolsGeojsonExists = fs.existsSync(path.join(DATA_DIR, 'private_schools.geojson'));
 
   const skipDistricts = opts?.skipDistricts ?? districtsGeojsonExists;
   if (!skipDistricts && !fs.existsSync(districtZip) && !fs.existsSync(edgeDistrictZip)) {
     const ok = await downloadFile(URLS.districts, districtZip);
     if (!ok) await downloadFile(URLS.districtsAlt, edgeDistrictZip);
   }
-  if (!fs.existsSync(publicZip)) {
+  if (!publicSchoolsGeojsonExists && !fs.existsSync(publicZip)) {
     await downloadFile(URLS.publicSchools, publicZip);
   }
-  if (!fs.existsSync(privateZip)) {
+  if (!privateSchoolsGeojsonExists && !fs.existsSync(privateZip)) {
     await downloadFile(URLS.privateSchools, privateZip);
   }
 
@@ -138,16 +142,16 @@ async function ensureRawFiles(opts?: { skipDistricts?: boolean }): Promise<{
       `Public schools not found. Download ${URLS.publicSchools} and save to ${publicZip}`
     );
   }
-  if (!fs.existsSync(privateZip)) {
+  if (!privateSchoolsGeojsonExists && !fs.existsSync(privateZip)) {
     throw new Error(
-      `Private schools not found. Download ${URLS.privateSchools} and save to ${privateZip}`
+      `Private schools not found. Run \`npm run build:private\` first, or download ${URLS.privateSchools} and save to ${privateZip}`
     );
   }
 
   return {
     districtsPath: skipDistricts ? '' : districtsPath,
-    publicPath: publicZip,
-    privatePath: privateZip,
+    publicPath: publicSchoolsGeojsonExists ? '' : publicZip,
+    privatePath: privateSchoolsGeojsonExists ? '' : privateZip,
   };
 }
 
@@ -171,17 +175,39 @@ function parseGrade(val: string | number | undefined): number | undefined {
   return isNaN(n) ? undefined : n;
 }
 
+function extractZipAndFindShp(zipPath: string, extractSubdir: string): string {
+  const extractDir = path.join(RAW_DIR, extractSubdir);
+  if (!fs.existsSync(extractDir)) {
+    fs.mkdirSync(extractDir, { recursive: true });
+    const zip = new AdmZip(zipPath);
+    zip.extractAllTo(extractDir, true);
+  }
+  function findShp(dir: string): string | null {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const e of entries) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        const found = findShp(full);
+        if (found) return found;
+      } else if (e.name.endsWith('.shp')) return full;
+    }
+    return null;
+  }
+  const shpPath = findShp(extractDir);
+  if (!shpPath) throw new Error(`No .shp in ${zipPath}`);
+  return shpPath;
+}
+
 async function buildDistricts(districtsPath: string): Promise<FeatureCollection<DistrictGeom, DistrictProperties>> {
   console.log('Building districts.geojson...');
-  const buf = fs.readFileSync(districtsPath);
-  const geojson = await shp(buf);
-  const features = Array.isArray(geojson) ? geojson : [geojson];
+  const shpPath = extractZipAndFindShp(districtsPath, 'districts_extract');
+  const geojson = await shapefile.read(shpPath);
+  const collection = geojson as FeatureCollection;
+  const feats = collection.features || [];
   const districts: DistrictFeature[] = [];
 
-  for (const fc of features) {
-    const feats = (fc as FeatureCollection).features || [];
-    for (const f of feats) {
-      if (f.geometry?.type !== 'Polygon' && f.geometry?.type !== 'MultiPolygon') continue;
+  for (const f of feats) {
+    if (f.geometry?.type !== 'Polygon' && f.geometry?.type !== 'MultiPolygon') continue;
       const props = f.properties || {};
       const stateFips = String(props.STATEFP ?? props.statefp ?? '').padStart(2, '0');
       if (stateFips !== RI_STATE_FIPS) continue;
@@ -212,7 +238,6 @@ async function buildDistricts(districtsPath: string): Promise<FeatureCollection<
           unsdleaid: props.UNSDLEA ?? props.unsdleaid,
         },
       });
-    }
   }
 
   const fc: FeatureCollection<DistrictGeom, DistrictProperties> = {
@@ -253,10 +278,32 @@ async function buildSchools(
     return { name: 'Unknown' };
   };
 
-  // Public schools (EDGE Geocode shapefile)
-  const publicBuf = fs.readFileSync(publicPath);
-  const publicGeo = await shp(publicBuf);
-  const publicFeats = Array.isArray(publicGeo) ? publicGeo.flatMap((g: any) => g.features || []) : (publicGeo as FeatureCollection).features || [];
+  // Public schools: from public_schools.geojson (CCD) or EDGE Geocode shapefile
+  const publicSchoolsPath = path.join(DATA_DIR, 'public_schools.geojson');
+  if (fs.existsSync(publicSchoolsPath)) {
+    const publicGeo = JSON.parse(fs.readFileSync(publicSchoolsPath, 'utf-8'));
+    const publicFeats = (publicGeo as FeatureCollection).features || [];
+    for (const f of publicFeats) {
+      const p = (f as any).properties || {};
+      const lat = p.lat ?? 0;
+      const lon = p.lon ?? 0;
+      if (isNaN(lat) || isNaN(lon) || !inRIBBox(lat, lon)) continue;
+      const district = assignDistrict(lat, lon);
+      schools.push({
+        type: 'Feature',
+        geometry: (f as any).geometry,
+        properties: {
+          ...p,
+          district_geoid: district.geoid ?? p.district_geoid,
+          district_name: district.name ?? p.district_name,
+          source: p.source ?? 'NCES_CCD_2024_2025',
+        } as SchoolProperties,
+      });
+    }
+  } else if (publicPath) {
+  const edgeShpPath = extractZipAndFindShp(publicPath, 'edge_geocode_extract');
+  const publicGeo = await shapefile.read(edgeShpPath);
+  const publicFeats = (publicGeo as FeatureCollection).features || [];
   for (const f of publicFeats) {
     const props = f.properties || {};
     if (String(props.STFIP ?? props.OPSTFIPS ?? '').padStart(2, '0') !== RI_STATE_FIPS) continue;
@@ -295,8 +342,31 @@ async function buildSchools(
       },
     });
   }
+  }
 
-  // Private schools (PSS CSV)
+  // Private schools: from private_schools.geojson or PSS CSV
+  const privateSchoolsPath = path.join(DATA_DIR, 'private_schools.geojson');
+  if (fs.existsSync(privateSchoolsPath)) {
+    const privateGeo = JSON.parse(fs.readFileSync(privateSchoolsPath, 'utf-8'));
+    const privateFeats = (privateGeo as FeatureCollection).features || [];
+    for (const f of privateFeats) {
+      const p = (f as any).properties || {};
+      const lat = p.lat ?? 0;
+      const lon = p.lon ?? 0;
+      if (isNaN(lat) || isNaN(lon) || !inRIBBox(lat, lon)) continue;
+      const district = assignDistrict(lat, lon);
+      schools.push({
+        type: 'Feature',
+        geometry: (f as any).geometry,
+        properties: {
+          ...p,
+          district_geoid: district.geoid ?? p.district_geoid,
+          district_name: district.name ?? p.district_name,
+          source: p.source ?? 'NCES_PSS_2021_2022',
+        } as SchoolProperties,
+      });
+    }
+  } else if (privatePath) {
   const AdmZip = await import('adm-zip').catch(() => null);
   const zip = AdmZip ? new (AdmZip as any).default(privatePath) : null;
   const csvName = zip?.getEntries().find((e: any) => e.entryName.toLowerCase().endsWith('.csv'))?.entryName;
@@ -375,6 +445,7 @@ async function buildSchools(
       },
     });
   }
+  }
 
   // De-dupe by name+coordinates
   const byKey = new Map<string, SchoolFeature>();
@@ -391,7 +462,9 @@ async function buildSchools(
     features: deduped,
   };
   fs.writeFileSync(path.join(DATA_DIR, 'schools.geojson'), JSON.stringify(fc, null, 0));
-  console.log(`  Wrote ${deduped.length} school features (${publicFeats.filter((f: any) => (f.properties?.STFIP ?? f.properties?.OPSTFIPS) === '44').length} public, ${rows.filter((r: any) => (r.LSTATE ?? r.STATE) === 'RI').length} private before dedup)`);
+  const publicCount = deduped.filter((s) => s.properties.school_type === 'public').length;
+  const privateCount = deduped.filter((s) => s.properties.school_type === 'private').length;
+  console.log(`  Wrote ${deduped.length} school features (${publicCount} public, ${privateCount} private)`);
 }
 
 async function main(): Promise<void> {

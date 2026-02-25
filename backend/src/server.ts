@@ -60,9 +60,12 @@ function loadDistricts(): GeoJSONFC {
 }
 
 function loadSchools(): GeoJSONFC {
-  if (schoolsData) return schoolsData;
   const p = path.join(DATA_DIR, 'schools.geojson');
   if (!fs.existsSync(p)) throw new Error('schools.geojson not found. Run: npm run build:data');
+  if (process.env.NODE_ENV !== 'production') {
+    return JSON.parse(fs.readFileSync(p, 'utf-8'));
+  }
+  if (schoolsData) return schoolsData;
   schoolsData = JSON.parse(fs.readFileSync(p, 'utf-8'));
   return schoolsData!;
 }

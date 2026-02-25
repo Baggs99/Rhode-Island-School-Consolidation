@@ -29,6 +29,7 @@ interface MapProps {
   schools: GeoJSONFC<SchoolFeature> | null;
   loading: boolean;
   showDistricts: boolean;
+  clusterSchools: boolean;
   selectedDistrict: DistrictFeature | null;
   selectedSchool: SchoolFeature | null;
   highlightDistrict: DistrictFeature | null;
@@ -42,6 +43,7 @@ export default function Map({
   schools,
   loading,
   showDistricts,
+  clusterSchools,
   selectedDistrict,
   selectedSchool,
   highlightDistrict,
@@ -54,7 +56,6 @@ export default function Map({
   const districtsSourceRef = useRef<string | null>(null);
   const schoolsSourceRef = useRef<string | null>(null);
   const clusterIndexRef = useRef<Supercluster<SchoolFeature, { point_count: number }> | null>(null);
-  const [clusterZoom, setClusterZoom] = useState(0);
   const [exportingPng, setExportingPng] = useState(false);
   const [hoveredDistrictLabel, setHoveredDistrictLabel] = useState<{
     name: string;
@@ -92,7 +93,7 @@ export default function Map({
     }
     districtsSourceRef.current = 'districts';
     map.addSource('districts', { type: 'geojson', data: data as any });
-    const beforeSchoolLayer = map.getLayer('school-clusters') ? 'school-clusters' : undefined;
+    const beforeSchoolLayer = map.getLayer('school-points') ? 'school-points' : map.getLayer('school-clusters') ? 'school-clusters' : undefined;
     map.addLayer(
       {
         id: 'district-fill',
@@ -212,18 +213,6 @@ export default function Map({
     const map = mapRef.current;
     if (!map || !schools?.features?.length) return;
 
-    const index = new Supercluster<SchoolFeature, { point_count: number }>({
-      radius: 50,
-      maxZoom: 16,
-    });
-    index.load(
-      schools.features.map((f) => ({
-        ...f,
-        geometry: { type: 'Point' as const, coordinates: f.geometry.coordinates },
-      }))
-    );
-    clusterIndexRef.current = index;
-
     if (schoolsSourceRef.current) {
       if (map.getLayer('school-clusters')) map.removeLayer('school-clusters');
       if (map.getLayer('school-cluster-count')) map.removeLayer('school-cluster-count');
@@ -232,108 +221,153 @@ export default function Map({
     }
     schoolsSourceRef.current = 'schools';
 
-    const getClusterGeoJSON = (zoom: number) => {
-      const b = map.getBounds();
-      const bounds: [number, number, number, number] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
-      const clusters = index.getClusters(bounds, Math.floor(zoom));
-      return {
-        type: 'FeatureCollection' as const,
-        features: clusters.map((c) => {
-          if (c.properties.cluster) {
+    const schoolGeoJSON = schools as GeoJSONFC<SchoolFeature>;
+
+    let updateSchools: (() => void) | undefined;
+    let handleClusterClick: ((e: maplibregl.MapLayerMouseEvent) => void) | undefined;
+
+    if (clusterSchools) {
+      const index = new Supercluster<SchoolFeature, { point_count: number }>({
+        radius: 50,
+        maxZoom: 16,
+      });
+      index.load(
+        schools.features.map((f) => ({
+          ...f,
+          geometry: { type: 'Point' as const, coordinates: f.geometry.coordinates },
+        }))
+      );
+      clusterIndexRef.current = index;
+
+      const getClusterGeoJSON = (zoom: number) => {
+        const b = map.getBounds();
+        const bounds: [number, number, number, number] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+        const clusters = index.getClusters(bounds, Math.floor(zoom));
+        return {
+          type: 'FeatureCollection' as const,
+          features: clusters.map((c) => {
+            if (c.properties.cluster) {
+              return {
+                type: 'Feature' as const,
+                id: c.id,
+                properties: {
+                  cluster: true,
+                  point_count: c.properties.point_count,
+                  point_count_abbreviated: c.properties.point_count >= 1000 ? `${(c.properties.point_count / 1000).toFixed(1)}k` : String(c.properties.point_count),
+                  cluster_id: c.id,
+                },
+                geometry: c.geometry,
+              };
+            }
             return {
               type: 'Feature' as const,
-              id: c.id,
-              properties: {
-                cluster: true,
-                point_count: c.properties.point_count,
-                point_count_abbreviated: c.properties.point_count >= 1000 ? `${(c.properties.point_count / 1000).toFixed(1)}k` : String(c.properties.point_count),
-                cluster_id: c.id,
-              },
-              geometry: c.geometry,
+              id: (c as SchoolFeature).properties.id,
+              properties: { ...(c as SchoolFeature).properties, cluster: false },
+              geometry: (c as SchoolFeature).geometry,
             };
-          }
-          return {
-            type: 'Feature' as const,
-            id: (c as SchoolFeature).properties.id,
-            properties: { ...(c as SchoolFeature).properties, cluster: false },
-            geometry: (c as SchoolFeature).geometry,
-          };
-        }),
+          }),
+        };
       };
-    };
 
-    const updateSchools = () => {
-      const zoom = map.getZoom() ?? 0;
-      setClusterZoom(zoom);
-      const source = map.getSource('schools') as maplibregl.GeoJSONSource;
-      if (source) source.setData(getClusterGeoJSON(zoom) as any);
-    };
+      updateSchools = () => {
+        const zoom = map.getZoom() ?? 0;
+        const source = map.getSource('schools') as maplibregl.GeoJSONSource;
+        if (source) source.setData(getClusterGeoJSON(zoom) as any);
+      };
 
-    map.addSource('schools', {
-      type: 'geojson',
-      data: getClusterGeoJSON(map.getZoom() ?? RI_ZOOM) as any,
-      promoteId: 'id',
-    });
-    map.addLayer({
-      id: 'school-clusters',
-      type: 'circle',
-      source: 'schools',
-      filter: ['==', ['get', 'cluster'], true],
-      paint: {
-        'circle-color': ['match', ['get', 'point_count'], 1, '#4caf50', '#2196f3'],
-        'circle-radius': ['step', ['get', 'point_count'], 18, 10, 22, 100, 28],
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#fff',
-      },
-    });
-    map.addLayer({
-      id: 'school-cluster-count',
-      type: 'symbol',
-      source: 'schools',
-      filter: ['==', ['get', 'cluster'], true],
-      layout: {
-        'text-field': ['get', 'point_count_abbreviated'],
-        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-        'text-size': 12,
-      },
-      paint: { 'text-color': '#fff' },
-    });
-    map.addLayer({
-      id: 'school-points',
-      type: 'circle',
-      source: 'schools',
-      filter: ['!=', ['get', 'cluster'], true],
-      paint: {
-        'circle-color': ['match', ['get', 'school_type'], 'public', '#2e7d32', '#1565c0'],
-        'circle-radius': ['match', ['get', 'school_type'], 'public', 6, 5],
-        'circle-stroke-width': ['match', ['get', 'school_type'], 'public', 2, 3],
-        'circle-stroke-color': '#fff',
-      },
-    });
+      map.addSource('schools', {
+        type: 'geojson',
+        data: getClusterGeoJSON(map.getZoom() ?? RI_ZOOM) as any,
+        promoteId: 'id',
+      });
+      map.addLayer({
+        id: 'school-clusters',
+        type: 'circle',
+        source: 'schools',
+        filter: ['==', ['get', 'cluster'], true],
+        paint: {
+          'circle-color': ['match', ['get', 'point_count'], 1, '#4caf50', '#2196f3'],
+          'circle-radius': ['step', ['get', 'point_count'], 18, 10, 22, 100, 28],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+        },
+      });
+      map.addLayer({
+        id: 'school-cluster-count',
+        type: 'symbol',
+        source: 'schools',
+        filter: ['==', ['get', 'cluster'], true],
+        layout: {
+          'text-field': ['get', 'point_count_abbreviated'],
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 12,
+        },
+        paint: { 'text-color': '#fff' },
+      });
+      map.addLayer({
+        id: 'school-points',
+        type: 'circle',
+        source: 'schools',
+        filter: ['!=', ['get', 'cluster'], true],
+        paint: {
+          'circle-color': ['match', ['get', 'school_type'], 'public', '#2e7d32', '#1565c0'],
+          'circle-radius': ['match', ['get', 'school_type'], 'public', 6, 5],
+          'circle-stroke-width': ['match', ['get', 'school_type'], 'public', 2, 3],
+          'circle-stroke-color': '#fff',
+        },
+      });
 
-    map.on('zoom', updateSchools);
-    map.on('moveend', updateSchools);
+      map.on('zoom', updateSchools);
+      map.on('moveend', updateSchools);
 
-    map.on('click', 'school-clusters', (e) => {
-      const f = e.features?.[0];
-      if (!f?.properties?.cluster) return;
-      const clusterId = (f.properties as any).cluster_id ?? f.id;
-      const zoom = map.getZoom() ?? 0;
-      const index = clusterIndexRef.current;
-      if (!index) return;
-      const expansionZoom = Math.min(index.getClusterExpansionZoom(clusterId), 18);
-      map.easeTo({ center: (f.geometry as any).coordinates, zoom: expansionZoom });
-    });
-    map.on('click', 'school-points', (e) => {
+      handleClusterClick = (e: maplibregl.MapLayerMouseEvent) => {
+        const f = e.features?.[0];
+        if (!f?.properties?.cluster) return;
+        const clusterId = (f.properties as any).cluster_id ?? f.id;
+        const expansionZoom = Math.min(index.getClusterExpansionZoom(clusterId), 18);
+        map.easeTo({ center: (f.geometry as any).coordinates, zoom: expansionZoom });
+      };
+      map.on('click', 'school-clusters', handleClusterClick);
+    } else {
+      clusterIndexRef.current = null;
+      map.addSource('schools', {
+        type: 'geojson',
+        data: schoolGeoJSON as any,
+        promoteId: 'id',
+      });
+      map.addLayer({
+        id: 'school-points',
+        type: 'circle',
+        source: 'schools',
+        paint: {
+          'circle-color': ['match', ['get', 'school_type'], 'public', '#2e7d32', '#1565c0'],
+          'circle-radius': ['match', ['get', 'school_type'], 'public', 6, 5],
+          'circle-stroke-width': ['match', ['get', 'school_type'], 'public', 2, 3],
+          'circle-stroke-color': '#fff',
+        },
+      });
+    }
+
+    const handleSchoolClick = (e: maplibregl.MapLayerMouseEvent) => {
       const fid = e.features?.[0]?.id;
       const school = schools.features.find((s) => s.properties.id === fid);
       if (school) onSchoolClick(school);
-    });
-    map.on('mouseenter', 'school-clusters', () => map.getCanvas().style.cursor = 'pointer');
-    map.on('mouseenter', 'school-points', () => map.getCanvas().style.cursor = 'pointer');
-    map.on('mouseleave', 'school-clusters', () => map.getCanvas().style.cursor = '');
-    map.on('mouseleave', 'school-points', () => map.getCanvas().style.cursor = '');
-  }, [schools, onSchoolClick]);
+    };
+    map.on('click', 'school-points', handleSchoolClick);
+    map.on('mouseenter', 'school-points', () => (map.getCanvas().style.cursor = 'pointer'));
+    map.on('mouseleave', 'school-points', () => (map.getCanvas().style.cursor = ''));
+
+    return () => {
+      map.off('click', 'school-points', handleSchoolClick);
+      map.off('mouseenter', 'school-points');
+      map.off('mouseleave', 'school-points');
+      if (clusterSchools && updateSchools && handleClusterClick) {
+        map.off('zoom', updateSchools);
+        map.off('moveend', updateSchools);
+        map.off('click', 'school-clusters', handleClusterClick);
+      }
+    };
+  }, [schools, clusterSchools, onSchoolClick]);
 
   useEffect(() => {
     const map = mapRef.current;

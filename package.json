@@ -5,6 +5,8 @@
   "scripts": {
     "build:data": "tsx scripts/build-data.ts",
     "build:districts": "tsx scripts/build-districts.ts",
+    "build:public": "tsx scripts/build-public-schools.ts",
+    "build:private": "tsx scripts/build-private-schools.ts",
     "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
     "build": "npm run build --workspace frontend",
     "lint": "npm run lint --workspace frontend"

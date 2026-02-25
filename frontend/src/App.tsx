@@ -20,6 +20,7 @@ export default function App() {
   const [selectedSchool, setSelectedSchool] = useState<SchoolFeature | null>(null);
   const [highlightDistrict, setHighlightDistrict] = useState<DistrictFeature | null>(null);
   const [showDistricts, setShowDistricts] = useState(true);
+  const [clusterSchools, setClusterSchools] = useState(false);
   const [districtLevelFilter, setDistrictLevelFilter] = useState({
     unified: true,
     elementary: true,
@@ -96,6 +97,8 @@ export default function App() {
         selectedSchool={selectedSchool}
         showDistricts={showDistricts}
         setShowDistricts={setShowDistricts}
+        clusterSchools={clusterSchools}
+        setClusterSchools={setClusterSchools}
         districtLevelFilter={districtLevelFilter}
         setDistrictLevelFilter={setDistrictLevelFilter}
         onSearchSelect={(school, district) => {
@@ -114,6 +117,7 @@ export default function App() {
         schools={schools}
         loading={loading}
         showDistricts={showDistricts}
+        clusterSchools={clusterSchools}
         selectedDistrict={selectedDistrict}
         selectedSchool={selectedSchool}
         highlightDistrict={highlightDistrict}

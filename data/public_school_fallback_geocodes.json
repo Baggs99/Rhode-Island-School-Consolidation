@@ -1,0 +1,32 @@
+{
+  "440001400551": {
+    "lat": 41.888368025821,
+    "lon": -71.396005348401,
+    "source": "CensusGeocoder",
+    "matchedAddress": "325 COWDEN ST, CENTRAL FALLS, RI, 02863"
+  },
+  "440002900548": {
+    "lat": 42.008904327337,
+    "lon": -71.503801550468,
+    "source": "CensusGeocoder",
+    "matchedAddress": "600 SOCIAL ST, WOONSOCKET, RI, 02895"
+  },
+  "440015000502": {
+    "lat": 41.449410873503,
+    "lon": -71.695060006905,
+    "source": "CensusGeocoder",
+    "matchedAddress": "453 SWITCH RD, WOOD RIVER JUNCTION, RI, 02894"
+  },
+  "440090000328": {
+    "lat": 41.816273936533,
+    "lon": -71.42160371986,
+    "source": "CensusGeocoder",
+    "matchedAddress": "91 FRICKER ST, PROVIDENCE, RI, 02903"
+  },
+  "440090000547": {
+    "lat": 41.850282403937,
+    "lon": -71.419871247192,
+    "source": "CensusGeocoder",
+    "matchedAddress": "425 BRANCH AVE, PROVIDENCE, RI, 02904"
+  }
+}

@@ -3,5 +3,8 @@ dist/
 .env
 .env.local
 data/*.geojson
+data/raw/edge_geocode_extract/
+data/raw/districts_extract/
+data/raw/*.zip
 *.log
 .DS_Store

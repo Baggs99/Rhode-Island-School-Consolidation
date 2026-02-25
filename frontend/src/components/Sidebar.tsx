@@ -11,6 +11,8 @@ interface SidebarProps {
   setFilters: (f: typeof SidebarProps.prototype.filters) => void;
   showDistricts: boolean;
   setShowDistricts: (v: boolean) => void;
+  clusterSchools: boolean;
+  setClusterSchools: (v: boolean) => void;
   districtLevelFilter: { unified: boolean; elementary: boolean; secondary: boolean };
   setDistrictLevelFilter: (f: SidebarProps['districtLevelFilter']) => void;
   searchQuery: string;
@@ -32,6 +34,8 @@ export default function Sidebar({
   setFilters,
   showDistricts,
   setShowDistricts,
+  clusterSchools,
+  setClusterSchools,
   districtLevelFilter,
   setDistrictLevelFilter,
   searchQuery,
@@ -173,6 +177,14 @@ export default function Sidebar({
             onChange={() => setFilters({ ...filters, private: !filters.private })}
           />
           Private
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={clusterSchools}
+            onChange={() => setClusterSchools(!clusterSchools)}
+          />
+          Cluster schools
         </label>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
           <input
