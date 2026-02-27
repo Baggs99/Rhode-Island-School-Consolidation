@@ -9,6 +9,10 @@
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@turf/area": "^7.3.4",
+    "@turf/bbox": "^7.3.4",
+    "@turf/centroid": "^7.3.4",
+    "@turf/point-on-feature": "^7.3.4",
     "axios": "^1.7.7",
     "fuse.js": "^7.0.0",
     "html-to-image": "^1.11.11",

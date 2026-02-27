@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Map from './components/Map';
 import Sidebar from './components/Sidebar';
 import type { GeoJSONFC, SchoolFeature, DistrictFeature } from './types';
+import type { LeaEnrollmentMap, SchoolEnrollmentMap } from './lib/enrollment';
 
 const API_BASE = '';
 
@@ -11,8 +12,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    public: true,
-    private: true,
+    public: false,
+    private: false,
     grade: [] as string[],
   });
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,12 +21,16 @@ export default function App() {
   const [selectedSchool, setSelectedSchool] = useState<SchoolFeature | null>(null);
   const [highlightDistrict, setHighlightDistrict] = useState<DistrictFeature | null>(null);
   const [showDistricts, setShowDistricts] = useState(true);
+  const [showDistrictLabels, setShowDistrictLabels] = useState(false);
   const [clusterSchools, setClusterSchools] = useState(false);
   const [districtLevelFilter, setDistrictLevelFilter] = useState({
     unified: true,
     elementary: true,
     secondary: true,
   });
+  const [leaEnrollment, setLeaEnrollment] = useState<LeaEnrollmentMap | null>(null);
+  const [schoolEnrollment, setSchoolEnrollment] = useState<SchoolEnrollmentMap | null>(null);
+  const [enrollmentLoadError, setEnrollmentLoadError] = useState<string | null>(null);
 
   const loadDistricts = useCallback(async () => {
     const res = await fetch(`${API_BASE}/api/districts`);
@@ -40,7 +45,7 @@ export default function App() {
     if (filters.private) types.push('private');
     const gradeParam = filters.grade.length ? filters.grade.join(',') : undefined;
     const params = new URLSearchParams();
-    if (types.length) params.set('type', types.join(','));
+    params.set('type', types.join(','));
     if (gradeParam) params.set('grade', gradeParam);
     if (searchQuery.trim()) params.set('q', searchQuery.trim());
     const res = await fetch(`${API_BASE}/api/schools?${params}`);
@@ -67,6 +72,36 @@ export default function App() {
     if (!loading) loadSchools();
   }, [loading, loadSchools]);
 
+  useEffect(() => {
+    const leaUrl = '/enrollment/ri_lea_enrollment_2024-10.json';
+    const schoolUrl = '/enrollment/ri_school_enrollment_2024-10.json';
+    if (typeof window !== 'undefined') {
+      console.log('enrollment fetch url', leaUrl);
+    }
+    const load = async () => {
+      try {
+        const leaRes = await fetch(leaUrl);
+        if (!leaRes.ok) {
+          throw new Error(`Fetch failed ${leaRes.status} ${leaRes.statusText} for ${leaUrl}. Did build:enrollment run? Output goes to frontend/public/enrollment/`);
+        }
+        const lea = (await leaRes.json()) as LeaEnrollmentMap;
+        const schoolRes = await fetch(schoolUrl);
+        if (!schoolRes.ok) {
+          throw new Error(`Fetch failed ${schoolRes.status} ${schoolRes.statusText} for ${schoolUrl}`);
+        }
+        const school = (await schoolRes.json()) as SchoolEnrollmentMap;
+        setLeaEnrollment(lea);
+        setSchoolEnrollment(school);
+        setEnrollmentLoadError(null);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setEnrollmentLoadError(msg);
+        console.error('Enrollment load error:', msg);
+      }
+    };
+    load();
+  }, []);
+
   const filteredDistricts = useMemo(() => {
     if (!districts?.features?.length) return districts;
     const levels: string[] = [];
@@ -87,6 +122,9 @@ export default function App() {
       <Sidebar
         districts={districts}
         schools={schools}
+        leaEnrollment={leaEnrollment}
+        schoolEnrollment={schoolEnrollment}
+        enrollmentLoadError={enrollmentLoadError}
         loading={loading}
         error={error}
         filters={filters}
@@ -97,6 +135,8 @@ export default function App() {
         selectedSchool={selectedSchool}
         showDistricts={showDistricts}
         setShowDistricts={setShowDistricts}
+        showDistrictLabels={showDistrictLabels}
+        setShowDistrictLabels={setShowDistrictLabels}
         clusterSchools={clusterSchools}
         setClusterSchools={setClusterSchools}
         districtLevelFilter={districtLevelFilter}
@@ -117,6 +157,9 @@ export default function App() {
         schools={schools}
         loading={loading}
         showDistricts={showDistricts}
+        showDistrictLabels={showDistrictLabels}
+        showPublic={filters.public}
+        showPrivate={filters.private}
         clusterSchools={clusterSchools}
         selectedDistrict={selectedDistrict}
         selectedSchool={selectedSchool}

@@ -22,6 +22,31 @@ const LAYERS: { dir: string; base: string; level: 'unified' | 'elementary' | 'se
 const LEVEL_PRIORITY: Record<string, number> = { unified: 3, secondary: 2, elementary: 1 };
 const REQUIRED_NAMES = ['Exeter-West Greenwich', 'Foster-Glocester', 'Little Compton'];
 
+/**
+ * Census TIGER classifies some RI regional districts as ELSD or SCSD,
+ * but they operate locally as unified regional districts. Force them to "unified".
+ */
+const LEVEL_OVERRIDES: Record<string, 'unified' | 'elementary' | 'secondary'> = {
+  '4400360': 'unified', // Exeter-West Greenwich Regional School District
+};
+
+/** Exclude "open ocean" / undefined districts (e.g., Census placeholder GEOID 4499997). */
+const EXCLUDED_NAMES = [
+  'school district not defined',
+  'not defined',
+  'undefined',
+  'not applicable',
+  'unknown',
+];
+const EXCLUDED_GEOIDS = new Set(['4499997', '4499998', '4499999']);
+
+function isExcludedDistrict(name: string, geoid: string): boolean {
+  const n = name.trim().toLowerCase();
+  if (!n) return true;
+  if (EXCLUDED_GEOIDS.has(geoid)) return true;
+  return EXCLUDED_NAMES.some((bad) => n === bad || n.includes(bad));
+}
+
 interface DistrictProperties {
   district_name: string;
   district_geoid: string;
@@ -83,6 +108,7 @@ async function readLayer(
     if (!geom || (geom.type !== 'Polygon' && geom.type !== 'MultiPolygon')) continue;
     const name = String(props.NAME ?? props.NAMELSAD ?? props.name ?? 'Unknown').trim();
     const geoid = String(props.GEOID ?? props.geoid ?? '').trim();
+    if (isExcludedDistrict(name, geoid)) continue;
     out.push({
       type: 'Feature',
       geometry: geom,
@@ -125,6 +151,14 @@ async function main(): Promise<void> {
   }
 
   const features = Array.from(byGeoid.values());
+
+  for (const f of features) {
+    const override = LEVEL_OVERRIDES[f.properties.district_geoid];
+    if (override && f.properties.district_level !== override) {
+      console.log(`  Override: "${f.properties.district_name}" ${f.properties.district_level} -> ${override}`);
+      f.properties.district_level = override;
+    }
+  }
 
   const fc: FeatureCollection = { type: 'FeatureCollection', features };
   ensureDataDir();

@@ -8,3 +8,6 @@ data/raw/districts_extract/
 data/raw/*.zip
 *.log
 .DS_Store
+
+# Generated enrollment JSON (rebuild with: npm run build:enrollment)
+frontend/public/enrollment/

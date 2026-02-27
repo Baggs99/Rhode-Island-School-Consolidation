@@ -1,16 +1,19 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
 import Supercluster from 'supercluster';
 import { toPng } from 'html-to-image';
+import pointOnFeature from '@turf/point-on-feature';
+import area from '@turf/area';
 import type { GeoJSONFC, SchoolFeature, DistrictFeature } from '../types';
 
 const RI_CENTER: [number, number] = [-71.5, 41.6];
 const RI_ZOOM = 8;
 
 // Free basemap: OpenStreetMap tiles (no API key)
-// Fallback: MapLibre demo tiles
+// Glyphs required for symbol layer text rendering
 const BASEMAP_STYLE = {
   version: 8,
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     osm: {
       type: 'raster',
@@ -29,6 +32,9 @@ interface MapProps {
   schools: GeoJSONFC<SchoolFeature> | null;
   loading: boolean;
   showDistricts: boolean;
+  showDistrictLabels: boolean;
+  showPublic: boolean;
+  showPrivate: boolean;
   clusterSchools: boolean;
   selectedDistrict: DistrictFeature | null;
   selectedSchool: SchoolFeature | null;
@@ -38,11 +44,136 @@ interface MapProps {
   onSchoolClick: (s: SchoolFeature | null) => void;
 }
 
+/** All map layer IDs used for school points (clusters + unclustered). */
+function collectSchoolLayerIds(clusterEnabled: boolean): string[] {
+  const ids = ['school-points'];
+  if (clusterEnabled) {
+    ids.push('school-clusters', 'school-cluster-count');
+  }
+  return ids;
+}
+
+/** Small districts that need offset labels + callouts (curated). */
+const OFFSET_LABEL_NAMES = new Set([
+  'central falls',
+  'pawtucket',
+  'providence',
+  'woonsocket',
+  'cranston',
+  'east providence',
+  'little compton',
+  'exeter-west greenwich',
+  'foster-glocester',
+]);
+
+const SMALL_DISTRICT_AREA_KM2 = 25;
+const OFFSET_DISTANCE_DEG = 0.018;
+const LABEL_ABBREV_MIN_LEN = 22;
+
+/** Format long district names for display (en dash, smart abbreviation). */
+function formatLabelName(name: string): string {
+  let out = name.replace(/\s*[-–—]\s*/g, '–');
+  if (out.length <= LABEL_ABBREV_MIN_LEN) return out;
+  out = out.replace(/West\s+Greenwich/gi, 'W. Greenwich');
+  out = out.replace(/East\s+Greenwich/gi, 'E. Greenwich');
+  out = out.replace(/North\s+Smithfield/gi, 'N. Smithfield');
+  out = out.replace(/South\s+Kingstown/gi, 'S. Kingstown');
+  return out;
+}
+
+type LabelProps = { districtName: string; offsetLabel: boolean; forceLabel: boolean; geoid: string; sortKey: number };
+
+/** Build label points + callout lines for all district levels (unified, elementary, secondary). */
+function buildDistrictLabelGeoJSON(
+  districts: GeoJSONFC<DistrictFeature> | null
+): {
+  labels: GeoJSON.FeatureCollection<GeoJSON.Point, LabelProps>;
+  callouts: GeoJSON.FeatureCollection<GeoJSON.LineString>;
+} {
+  const labelFeatures: GeoJSON.Feature<GeoJSON.Point, LabelProps>[] = [];
+  const calloutFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
+  if (!districts?.features?.length) {
+    return {
+      labels: { type: 'FeatureCollection', features: labelFeatures },
+      callouts: { type: 'FeatureCollection', features: calloutFeatures },
+    };
+  }
+  const toLabel = districts.features;
+  for (const f of toLabel) {
+    const name = (f.properties?.district_name ?? f.properties?.name ?? '')?.trim();
+    if (!name || /school district not defined/i.test(name)) continue;
+    const geoid = f.properties?.district_geoid ?? f.properties?.geoid ?? '';
+    const geom = f.geometry;
+    if (geom.type !== 'Polygon' && geom.type !== 'MultiPolygon') continue;
+    const feature = { type: 'Feature' as const, properties: {}, geometry: geom };
+    const pointOn = pointOnFeature(feature as any);
+    const [cx, cy] = pointOn.geometry.coordinates;
+    const a = area({ type: 'FeatureCollection', features: [feature as any] } as any);
+    const areaKm2 = a / 1e6;
+    const nameLower = name.toLowerCase();
+    const forceOffset = OFFSET_LABEL_NAMES.has(nameLower) || areaKm2 < SMALL_DISTRICT_AREA_KM2;
+    const forceLabel = forceOffset;
+    let labelLon = cx;
+    let labelLat = cy;
+    if (forceOffset) {
+      labelLon = cx + OFFSET_DISTANCE_DEG;
+      labelLat = cy;
+      calloutFeatures.push({
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [labelLon, labelLat],
+            [cx, cy],
+          ],
+        },
+      });
+    }
+    labelFeatures.push({
+      type: 'Feature',
+      properties: {
+        districtName: formatLabelName(name),
+        offsetLabel: forceOffset,
+        forceLabel,
+        geoid,
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [labelLon, labelLat],
+      },
+    });
+  }
+  const labels = { type: 'FeatureCollection' as const, features: labelFeatures };
+  const callouts = { type: 'FeatureCollection' as const, features: calloutFeatures };
+  return { labels, callouts };
+}
+
+/** Set visibility for school layers based on public/private toggles. When both off, hides all. */
+function applySchoolVisibilityAndFilters(
+  map: maplibregl.Map,
+  opts: { showPublic: boolean; showPrivate: boolean; clusterEnabled: boolean }
+): void {
+  const { showPublic, showPrivate, clusterEnabled } = opts;
+  const layerIds = collectSchoolLayerIds(clusterEnabled);
+  const showAny = showPublic || showPrivate;
+  const visibility = showAny ? 'visible' : 'none';
+
+  for (const id of layerIds) {
+    if (map.getLayer(id)) {
+      map.setLayoutProperty(id, 'visibility', visibility);
+    }
+  }
+}
+
 export default function Map({
   districts,
   schools,
   loading,
   showDistricts,
+  showDistrictLabels,
+  showPublic,
+  showPrivate,
   clusterSchools,
   selectedDistrict,
   selectedSchool,
@@ -54,6 +185,8 @@ export default function Map({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const districtsSourceRef = useRef<string | null>(null);
+  const districtLabelsSourceRef = useRef<string | null>(null);
+  const districtCalloutsSourceRef = useRef<string | null>(null);
   const schoolsSourceRef = useRef<string | null>(null);
   const clusterIndexRef = useRef<Supercluster<SchoolFeature, { point_count: number }> | null>(null);
   const [exportingPng, setExportingPng] = useState(false);
@@ -209,9 +342,110 @@ export default function Map({
     });
   }, [showDistricts]);
 
+  const districtLabelData = useMemo(
+    () => buildDistrictLabelGeoJSON(districts),
+    [districts]
+  );
+
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !schools?.features?.length) return;
+    if (!map || districts == null) return;
+    if (!showDistrictLabels) {
+      if (districtLabelsSourceRef.current) {
+        if (map.getLayer('district-labels')) map.removeLayer('district-labels');
+        if (map.getLayer('district-callouts')) map.removeLayer('district-callouts');
+        map.removeSource('district-labels');
+        map.removeSource('district-callouts');
+        districtLabelsSourceRef.current = null;
+        districtCalloutsSourceRef.current = null;
+      }
+      return;
+    }
+    if (showDistrictLabels) {
+      console.log('district-labels source:', map.getSource('district-labels'));
+      console.log('district-labels layer:', map.getLayer('district-labels'));
+      console.log('district-callouts layer:', map.getLayer('district-callouts'));
+    }
+    const beforeSchool = map.getLayer('school-points') ? 'school-points' : map.getLayer('school-clusters') ? 'school-clusters' : undefined;
+    if (districtLabelsSourceRef.current) {
+      const labelsSrc = map.getSource('district-labels') as maplibregl.GeoJSONSource;
+      const calloutsSrc = map.getSource('district-callouts') as maplibregl.GeoJSONSource;
+      if (labelsSrc) labelsSrc.setData(districtLabelData.labels as any);
+      if (calloutsSrc) calloutsSrc.setData(districtLabelData.callouts as any);
+    } else {
+      const addLabelLayers = () => {
+        if (districtLabelsSourceRef.current) return;
+        map.addSource('district-labels', {
+          type: 'geojson',
+          data: districtLabelData.labels as any,
+        });
+        map.addSource('district-callouts', {
+          type: 'geojson',
+          data: districtLabelData.callouts as any,
+        });
+        districtLabelsSourceRef.current = 'district-labels';
+        districtCalloutsSourceRef.current = 'district-callouts';
+        map.addLayer(
+          {
+            id: 'district-callouts',
+            type: 'line',
+            source: 'district-callouts',
+            paint: {
+              'line-color': '#1e40af',
+              'line-width': 1,
+              'line-dasharray': [2, 1],
+            },
+          },
+          beforeSchool
+        );
+        map.addLayer({
+          id: 'district-labels',
+          type: 'symbol',
+          source: 'district-labels',
+          layout: {
+            visibility: 'visible',
+            'symbol-placement': 'point',
+            'symbol-sort-key': ['get', 'sortKey'],
+            'text-field': ['get', 'districtName'],
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 13,
+            'text-anchor': 'center',
+            'text-optional': true,
+            'text-allow-overlap': true,
+            'text-ignore-placement': true,
+          },
+          paint: {
+            'text-color': '#0f172a',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 2,
+            'text-halo-blur': 0.5,
+          },
+        });
+      };
+      if (map.isStyleLoaded()) {
+        addLabelLayers();
+      } else {
+        map.once('load', addLabelLayers);
+      }
+    }
+  }, [districts, showDistrictLabels, districtLabelData]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const labelVis = showDistrictLabels && showDistricts ? 'visible' : 'none';
+    ['district-labels', 'district-callouts'].forEach((id) => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', labelVis);
+    });
+  }, [showDistrictLabels, showDistricts]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || schools == null) return;
+
+    const schoolGeoJSON = (schools.features?.length
+      ? schools
+      : { type: 'FeatureCollection' as const, features: [] }) as GeoJSONFC<SchoolFeature>;
 
     if (schoolsSourceRef.current) {
       if (map.getLayer('school-clusters')) map.removeLayer('school-clusters');
@@ -220,8 +454,6 @@ export default function Map({
       map.removeSource(schoolsSourceRef.current);
     }
     schoolsSourceRef.current = 'schools';
-
-    const schoolGeoJSON = schools as GeoJSONFC<SchoolFeature>;
 
     let updateSchools: (() => void) | undefined;
     let handleClusterClick: ((e: maplibregl.MapLayerMouseEvent) => void) | undefined;
@@ -232,7 +464,7 @@ export default function Map({
         maxZoom: 16,
       });
       index.load(
-        schools.features.map((f) => ({
+        schoolGeoJSON.features.map((f) => ({
           ...f,
           geometry: { type: 'Point' as const, coordinates: f.geometry.coordinates },
         }))
@@ -350,12 +582,18 @@ export default function Map({
 
     const handleSchoolClick = (e: maplibregl.MapLayerMouseEvent) => {
       const fid = e.features?.[0]?.id;
-      const school = schools.features.find((s) => s.properties.id === fid);
+      const school = schoolGeoJSON.features.find((s) => s.properties.id === fid);
       if (school) onSchoolClick(school);
     };
     map.on('click', 'school-points', handleSchoolClick);
     map.on('mouseenter', 'school-points', () => (map.getCanvas().style.cursor = 'pointer'));
     map.on('mouseleave', 'school-points', () => (map.getCanvas().style.cursor = ''));
+
+    applySchoolVisibilityAndFilters(map, {
+      showPublic,
+      showPrivate,
+      clusterEnabled: clusterSchools,
+    });
 
     return () => {
       map.off('click', 'school-points', handleSchoolClick);
@@ -367,7 +605,17 @@ export default function Map({
         map.off('click', 'school-clusters', handleClusterClick);
       }
     };
-  }, [schools, clusterSchools, onSchoolClick]);
+  }, [schools, clusterSchools, showPublic, showPrivate, onSchoolClick]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    applySchoolVisibilityAndFilters(map, {
+      showPublic,
+      showPrivate,
+      clusterEnabled: clusterSchools,
+    });
+  }, [showPublic, showPrivate, clusterSchools]);
 
   useEffect(() => {
     const map = mapRef.current;

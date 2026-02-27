@@ -100,9 +100,9 @@ app.get('/api/schools', (req, res) => {
 
     let features = [...data.features];
 
-    if (typeParam) {
-      const types = typeParam.split(',').map((t) => t.trim().toLowerCase());
-      features = features.filter((f) => types.includes(f.properties.school_type));
+    if (typeParam !== undefined) {
+      const types = typeParam.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+      features = types.length === 0 ? [] : features.filter((f) => types.includes(f.properties.school_type));
     }
 
     if (gradeParam) {
