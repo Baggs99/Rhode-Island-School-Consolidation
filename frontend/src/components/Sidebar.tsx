@@ -1,4 +1,4 @@
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useState, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import Fuse from 'fuse.js';
 import type { GeoJSONFC, SchoolFeature, DistrictFeature } from '../types';
 import {
@@ -218,10 +218,24 @@ export default function Sidebar({
   const [consolidationParams, setConsolidationParams] = useState<ConsolidationParamsV1>({
     adminReductionRate: 1.0,
     costPerStudentMile: 3.0,
-    affectedShare: 1.0,
+    affectedShare: 0,
   });
 
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const [searchOpen, setSearchOpen] = useState<boolean>(() => {
+    try { return localStorage.getItem('sidebar.searchCollapsed') !== '1'; } catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('sidebar.searchCollapsed', searchOpen ? '0' : '1'); } catch { /* noop */ }
+  }, [searchOpen]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const toggleSearch = () => {
+    setSearchOpen((prev) => {
+      if (!prev) setTimeout(() => searchInputRef.current?.focus(), 50);
+      return !prev;
+    });
+  };
 
   // --- Consolidation Sandbox ---
   const [sandboxSearch, setSandboxSearch] = useState('');
@@ -293,6 +307,28 @@ export default function Sidebar({
     setFilters({ ...filters, grade: next });
   };
 
+  const selectedName = selectedDistrict
+    ? (selectedDistrict.properties.district_name ?? selectedDistrict.properties.name ?? 'Unknown')
+    : selectedSchool
+      ? selectedSchool.properties.name
+      : null;
+
+  const selectedSubtitle = (() => {
+    if (selectedDistrict) {
+      const parts: string[] = [];
+      if (districtEnrollment?.total) parts.push(`${districtEnrollment.total.toLocaleString()} students`);
+      if (districtBudget) parts.push($(districtBudget.totalExpenditures));
+      return parts.join(' · ') || null;
+    }
+    if (selectedSchool) {
+      const parts: string[] = [];
+      if (selectedSchool.properties.grade_bucket) parts.push(selectedSchool.properties.grade_bucket);
+      if (schoolEnrollmentData?.total) parts.push(`${schoolEnrollmentData.total.toLocaleString()} students`);
+      return parts.join(' · ') || null;
+    }
+    return null;
+  })();
+
   return (
     <div
       style={{
@@ -305,58 +341,162 @@ export default function Sidebar({
         overflow: 'hidden',
       }}
     >
-      <div style={{ padding: 16, borderBottom: '1px solid #eee' }}>
-        <h1 style={{ margin: '0 0 12px 0', fontSize: 18, fontWeight: 600 }}>
-          Rhode Island Schools
-        </h1>
-        <input
-          type="search"
-          placeholder="Search by school or district..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+      {/* Fixed title */}
+      <div style={{ padding: '12px 16px 8px', borderBottom: '1px solid #eee', flexShrink: 0 }}>
+        <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>RI District Consolidation Calculator</h1>
+      </div>
+
+      {/* Selected summary bar — sticky inside scroll area is handled below */}
+      {/* Scrollable area starts here */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {/* Sticky selected summary */}
+        <div
           style={{
-            width: '100%',
-            padding: '10px 12px',
-            border: '1px solid #ccc',
-            borderRadius: 6,
-            fontSize: 14,
+            position: 'sticky',
+            top: 0,
+            zIndex: 5,
+            background: selectedName ? '#fff' : 'transparent',
+            borderBottom: selectedName ? '1px solid #e0e0e0' : 'none',
           }}
-        />
-        {searchResults.length > 0 && (
-          <ul
-            style={{
-              margin: '8px 0 0 0',
-              padding: 0,
-              listStyle: 'none',
-              maxHeight: 200,
-              overflowY: 'auto',
-              background: '#f9f9f9',
-              borderRadius: 6,
-            }}
-          >
-            {searchResults.map((r) => (
-              <li
-                key={r.school ? r.school.properties.id : r.district!.properties.district_geoid ?? r.district!.properties.geoid}
-                onClick={() => {
-                  if (r.school) onSearchSelect(r.school, r.district ?? undefined);
-                  else if (r.district) onSearchSelect(undefined, r.district);
-                }}
+        >
+          {selectedName ? (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                padding: '10px 16px',
+                borderLeft: `4px solid ${selectedDistrict ? '#1976d2' : '#7b1fa2'}`,
+                background: selectedDistrict ? '#e8f0fe' : '#f3e8fd',
+              }}
+            >
+              <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>
+                {selectedDistrict ? '\u{1F3DB}\u{FE0F}' : '\u{1F3EB}'}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.3, wordBreak: 'break-word' }}>
+                  {selectedName}
+                </div>
+                {selectedSubtitle && (
+                  <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>{selectedSubtitle}</div>
+                )}
+              </div>
+              <button
+                onClick={onClearSelection}
+                title="Clear selection"
                 style={{
-                  padding: '10px 12px',
+                  background: 'none',
+                  border: 'none',
                   cursor: 'pointer',
-                  borderBottom: '1px solid #eee',
-                  fontSize: 13,
+                  fontSize: 16,
+                  lineHeight: 1,
+                  color: '#999',
+                  padding: '0 2px',
+                  flexShrink: 0,
                 }}
               >
-                {r.school ? r.school.properties.name : r.district!.properties.name}
-                <span style={{ color: '#666', marginLeft: 6 }}>
-                  {r.school ? r.school.properties.school_type : 'District'}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                ✕
+              </button>
+            </div>
+          ) : (
+            <div
+              style={{
+                padding: '8px 16px',
+                fontSize: 12,
+                color: '#999',
+                background: '#fafafa',
+                borderBottom: '1px solid #eee',
+              }}
+            >
+              Click a district or school on the map to view details.
+            </div>
+          )}
+        </div>
+
+        {/* Collapsible Search */}
+        <div style={{ borderBottom: '1px solid #eee' }}>
+          <button
+            onClick={toggleSearch}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: 14,
+              color: '#333',
+            }}
+          >
+            Search
+            <span
+              style={{
+                fontSize: 12,
+                color: '#999',
+                transition: 'transform 0.2s',
+                transform: searchOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+            >
+              ▼
+            </span>
+          </button>
+          {searchOpen && (
+            <div style={{ padding: '0 16px 12px' }}>
+              <input
+                ref={searchInputRef}
+                type="search"
+                placeholder="Search by school or district..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid #ccc',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  boxSizing: 'border-box',
+                }}
+              />
+              {searchResults.length > 0 && (
+                <ul
+                  style={{
+                    margin: '8px 0 0 0',
+                    padding: 0,
+                    listStyle: 'none',
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                    background: '#f9f9f9',
+                    borderRadius: 6,
+                  }}
+                >
+                  {searchResults.map((r) => (
+                    <li
+                      key={r.school ? r.school.properties.id : r.district!.properties.district_geoid ?? r.district!.properties.geoid}
+                      onClick={() => {
+                        if (r.school) onSearchSelect(r.school, r.district ?? undefined);
+                        else if (r.district) onSearchSelect(undefined, r.district);
+                      }}
+                      style={{
+                        padding: '10px 12px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #eee',
+                        fontSize: 13,
+                      }}
+                    >
+                      {r.school ? r.school.properties.name : r.district!.properties.name}
+                      <span style={{ color: '#666', marginLeft: 6 }}>
+                        {r.school ? r.school.properties.school_type : 'District'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
 
       <div style={{ borderBottom: '1px solid #eee' }}>
         <button
@@ -404,22 +544,6 @@ export default function Sidebar({
                 onChange={() => setFilters({ ...filters, private: !filters.private })}
               />
               Private
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={clusterSchools}
-                onChange={() => setClusterSchools(!clusterSchools)}
-              />
-              Cluster schools
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={showAnchors}
-                onChange={() => setShowAnchors(!showAnchors)}
-              />
-              Show district anchors (HS/Elem)
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
               <input
@@ -496,7 +620,7 @@ export default function Sidebar({
         )}
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+      <div style={{ padding: 16 }}>
         {/* ── Consolidation Sandbox (V1) ── */}
         <div
           style={{
@@ -670,7 +794,7 @@ export default function Sidebar({
           <div style={{ marginBottom: 12, padding: '8px 0', borderTop: '1px solid #e0e0e0' }}>
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>Parameters</div>
             <label style={{ display: 'block', marginBottom: 6, fontSize: 12 }}>
-              Spoke admin reduction: {Math.round(consolidationParams.adminReductionRate * 100)}%
+              Smaller district(s) admin reduction: {Math.round(consolidationParams.adminReductionRate * 100)}%
               <input
                 type="range"
                 min={0}
@@ -1002,11 +1126,7 @@ export default function Sidebar({
             </button>
           </div>
         )}
-        {!loading && !selectedDistrict && !selectedSchool && schools && (
-          <div style={{ color: '#666', fontSize: 13 }}>
-            Click a district or school on the map, or use the Consolidation Sandbox above to analyze district mergers.
-          </div>
-        )}
+      </div>
       </div>
     </div>
   );

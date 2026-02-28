@@ -13,7 +13,8 @@
     "build:anchors": "tsx scripts/build-district-anchors.ts",
     "predev": "npm run build:enrollment && npm run build:budgets && npm run build:centroids && npm run build:anchors",
     "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
-    "build": "npm run build --workspace frontend",
+    "build": "npm run build --workspace frontend && npm run build --workspace backend",
+    "start": "node backend/dist/server.js",
     "lint": "npm run lint --workspace frontend"
   },
   "workspaces": [

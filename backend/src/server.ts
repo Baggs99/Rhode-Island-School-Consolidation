@@ -126,7 +126,23 @@ app.get('/api/schools', (req, res) => {
   }
 });
 
-const PORT = Number(process.env.BACKEND_PORT) || 3001;
+// In production, serve the built frontend
+const FRONTEND_DIST = path.join(__dirname, '..', '..', 'frontend', 'dist');
+if (fs.existsSync(FRONTEND_DIST)) {
+  app.use(express.static(FRONTEND_DIST));
+}
+
+// Catch-all: serve frontend index.html for client-side routing
+app.get('*', (_req, res) => {
+  const index = path.join(FRONTEND_DIST, 'index.html');
+  if (fs.existsSync(index)) {
+    res.sendFile(index);
+  } else {
+    res.status(404).send('Frontend not built. Run: npm run build');
+  }
+});
+
+const PORT = Number(process.env.PORT) || 3001;
 app.listen(PORT, () => {
   try {
     loadDistricts();
@@ -134,5 +150,5 @@ app.listen(PORT, () => {
   } catch {
     console.warn('Districts not loaded. Run: npm run build:districts');
   }
-  console.log(`Backend API on http://localhost:${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });

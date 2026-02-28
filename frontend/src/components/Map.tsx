@@ -226,7 +226,7 @@ export default function Map({
     if (!map || districts == null) return;
     const data = districts;
 
-    const layerIds = ['district-fill', 'district-outline', 'district-outline-hover', 'district-highlight'];
+    const layerIds = ['district-fill', 'district-outline', 'district-outline-hover', 'district-highlight', 'district-flash'];
     if (districtsSourceRef.current) {
       layerIds.forEach((id) => {
         if (map.getLayer(id)) map.removeLayer(id);
@@ -296,6 +296,20 @@ export default function Map({
       },
       beforeSchoolLayer
     );
+    map.addLayer(
+      {
+        id: 'district-flash',
+        type: 'fill',
+        source: 'districts',
+        paint: {
+          'fill-color': '#fdd835',
+          'fill-opacity': 0,
+          'fill-opacity-transition': { duration: 600, delay: 0 },
+        },
+        filter: ['==', ['get', 'district_geoid'], ''],
+      },
+      beforeSchoolLayer
+    );
 
     const handleClick = (e: any) => {
       const f = e.features?.[0];
@@ -348,9 +362,24 @@ export default function Map({
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || !selectedDistrict || !map.getLayer('district-flash')) return;
+    const geoid = selectedDistrict.properties.district_geoid ?? selectedDistrict.properties.geoid ?? '';
+    if (!geoid) return;
+    map.setFilter('district-flash', ['==', ['get', 'district_geoid'], geoid]);
+    map.setPaintProperty('district-flash', 'fill-opacity', 0.5);
+    const timer = setTimeout(() => {
+      if (map.getLayer('district-flash')) {
+        map.setPaintProperty('district-flash', 'fill-opacity', 0);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [selectedDistrict]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map) return;
     const visibility = showDistricts ? 'visible' : 'none';
-    ['district-fill', 'district-outline', 'district-outline-hover', 'district-highlight'].forEach((id) => {
+    ['district-fill', 'district-outline', 'district-outline-hover', 'district-highlight', 'district-flash'].forEach((id) => {
       if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visibility);
     });
   }, [showDistricts]);
@@ -887,47 +916,6 @@ export default function Map({
           Loading...
         </div>
       )}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 16,
-          right: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}
-      >
-        <button
-          onClick={handleExportGeoJSON}
-          disabled={!schools?.features?.length}
-          style={{
-            padding: '8px 12px',
-            background: '#1976d2',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            cursor: schools?.features?.length ? 'pointer' : 'not-allowed',
-            fontSize: 13,
-          }}
-        >
-          Export visible schools (GeoJSON)
-        </button>
-        <button
-          onClick={handleExportPNG}
-          disabled={exportingPng}
-          style={{
-            padding: '8px 12px',
-            background: exportingPng ? '#90a4ae' : '#1976d2',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            cursor: exportingPng ? 'wait' : 'pointer',
-            fontSize: 13,
-          }}
-        >
-          {exportingPng ? 'Exporting…' : 'Export map view (PNG)'}
-        </button>
-      </div>
     </div>
   );
 }

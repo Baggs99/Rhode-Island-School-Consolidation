@@ -1,0 +1,680 @@
+{
+  "foster glocester": {
+    "displayName": "Foster-Glocester Regional School District",
+    "lat": 41.865477,
+    "lon": -71.715072,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Ponaganset High School",
+      "ncesId": "440042000116",
+      "enrollment": 869,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400420",
+      "districtName": "Foster-Glocester Regional School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "exeter west greenwich": {
+    "displayName": "Exeter-West Greenwich Regional School District",
+    "lat": 41.607586,
+    "lon": -71.638398,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Exeter-West Greenwich Regional",
+      "ncesId": "440036000391",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400360",
+      "districtName": "Exeter-West Greenwich Regional School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "foster": {
+    "displayName": "Foster Elementary School District",
+    "lat": 41.790828,
+    "lon": -71.731557,
+    "anchorType": "fallback",
+    "anchorSchool": null,
+    "flags": [
+      "anchor_fallback_no_school_candidates"
+    ]
+  },
+  "glocester": {
+    "displayName": "Glocester Elementary School District",
+    "lat": 41.894037,
+    "lon": -71.68621,
+    "anchorType": "fallback",
+    "anchorSchool": null,
+    "flags": [
+      "anchor_fallback_no_school_candidates"
+    ]
+  },
+  "jamestown": {
+    "displayName": "Jamestown School District",
+    "lat": 41.500692,
+    "lon": -71.380315,
+    "anchorType": "elementary_school",
+    "anchorSchool": {
+      "name": "Jamestown School-Melrose",
+      "ncesId": "440051000404",
+      "enrollment": 207,
+      "gradeLow": null,
+      "gradeHigh": 4,
+      "gradeBucket": "Elementary",
+      "districtGeoid": "4400510",
+      "districtName": "Jamestown School District"
+    },
+    "flags": [
+      "anchor_elementary_school"
+    ]
+  },
+  "little compton": {
+    "displayName": "Little Compton School District",
+    "lat": 41.509536,
+    "lon": -71.17369,
+    "anchorType": "elementary_school",
+    "anchorSchool": {
+      "name": "Wilbur and McMahon Schools",
+      "ncesId": "440060000140",
+      "enrollment": 216,
+      "gradeLow": null,
+      "gradeHigh": 8,
+      "gradeBucket": "Elementary",
+      "districtGeoid": "4400600",
+      "districtName": "Little Compton School District"
+    },
+    "flags": [
+      "anchor_elementary_school"
+    ]
+  },
+  "barrington": {
+    "displayName": "Barrington School District",
+    "lat": 41.747017,
+    "lon": -71.320811,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Barrington High School",
+      "ncesId": "440003000001",
+      "enrollment": 1098,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400030",
+      "districtName": "Barrington School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "bristol warren": {
+    "displayName": "Bristol-Warren Regional School District",
+    "lat": 41.687712,
+    "lon": -71.269308,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Mt. Hope High School",
+      "ncesId": "440006500009",
+      "enrollment": 787,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400065",
+      "districtName": "Bristol-Warren Regional School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "burrillville": {
+    "displayName": "Burrillville School District",
+    "lat": 41.968197,
+    "lon": -71.662387,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Burrillville High School",
+      "ncesId": "440009000019",
+      "enrollment": 634,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400090",
+      "districtName": "Burrillville School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "central falls": {
+    "displayName": "Central Falls School District",
+    "lat": 41.886629,
+    "lon": -71.391186,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Central Falls Sr High",
+      "ncesId": "440012000026",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400120",
+      "districtName": "Central Falls School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "chariho": {
+    "displayName": "Chariho Regional School District",
+    "lat": 41.450085,
+    "lon": -71.69645,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Chariho High School",
+      "ncesId": "440015000029",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400150",
+      "districtName": "Chariho Regional School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "coventry": {
+    "displayName": "Coventry School District",
+    "lat": 41.684879,
+    "lon": -71.591138,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Coventry High School",
+      "ncesId": "440021000032",
+      "enrollment": 1201,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400210",
+      "districtName": "Coventry School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "cranston": {
+    "displayName": "Cranston School District",
+    "lat": 41.771918,
+    "lon": -71.476059,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Cranston High School West",
+      "ncesId": "440024000045",
+      "enrollment": 1653,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400240",
+      "districtName": "Cranston School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "cumberland": {
+    "displayName": "Cumberland School District",
+    "lat": 41.964986,
+    "lon": -71.447817,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Cumberland High School",
+      "ncesId": "440027000076",
+      "enrollment": 1428,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400270",
+      "districtName": "Cumberland School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "east greenwich": {
+    "displayName": "East Greenwich School District",
+    "lat": 41.638887,
+    "lon": -71.483626,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "East Greenwich High",
+      "ncesId": "440030000086",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400300",
+      "districtName": "East Greenwich School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "east providence": {
+    "displayName": "East Providence School District",
+    "lat": 41.819502,
+    "lon": -71.354756,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "East Providence High",
+      "ncesId": "440033000097",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400330",
+      "districtName": "East Providence School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "johnston": {
+    "displayName": "Johnston School District",
+    "lat": 41.831949,
+    "lon": -71.501621,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Johnston Senior High",
+      "ncesId": "440054000128",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400540",
+      "districtName": "Johnston School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "lincoln": {
+    "displayName": "Lincoln School District",
+    "lat": 41.936721,
+    "lon": -71.450534,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Lincoln Senior High School",
+      "ncesId": "440057000135",
+      "enrollment": 973,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400570",
+      "districtName": "Lincoln School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "middletown": {
+    "displayName": "Middletown School District",
+    "lat": 41.517954,
+    "lon": -71.287047,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Middletown High School",
+      "ncesId": "440063000147",
+      "enrollment": 523,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400630",
+      "districtName": "Middletown School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "narragansett": {
+    "displayName": "Narragansett School District",
+    "lat": 41.43032,
+    "lon": -71.469925,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Narragansett High School",
+      "ncesId": "440066000151",
+      "enrollment": 372,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400660",
+      "districtName": "Narragansett School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "new shoreham": {
+    "displayName": "New Shoreham School District",
+    "lat": 41.164408,
+    "lon": -71.560898,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Block Island School",
+      "ncesId": "440069000149",
+      "enrollment": 126,
+      "gradeLow": null,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400690",
+      "districtName": "New Shoreham School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "newport": {
+    "displayName": "Newport School District",
+    "lat": 41.46846,
+    "lon": -71.321108,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Rogers High School",
+      "ncesId": "440072000159",
+      "enrollment": 599,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400720",
+      "districtName": "Newport School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "north kingstown": {
+    "displayName": "North Kingstown School District",
+    "lat": 41.555858,
+    "lon": -71.44854,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "North Kingstown Sr. High",
+      "ncesId": "440075000168",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400750",
+      "districtName": "North Kingstown School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "north providence": {
+    "displayName": "North Providence School District",
+    "lat": 41.86058,
+    "lon": -71.459465,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "North Providence High",
+      "ncesId": "440078000180",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400780",
+      "districtName": "North Providence School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "north smithfield": {
+    "displayName": "North Smithfield School District",
+    "lat": 41.953963,
+    "lon": -71.544601,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "North Smitfield HS",
+      "ncesId": "440081000186",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400810",
+      "districtName": "North Smithfield School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "pawtucket": {
+    "displayName": "Pawtucket School District",
+    "lat": 41.865226,
+    "lon": -71.388072,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Charles E. Shea High School",
+      "ncesId": "440084000201",
+      "enrollment": 770,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400840",
+      "districtName": "Pawtucket School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "portsmouth": {
+    "displayName": "Portsmouth School District",
+    "lat": 41.612596,
+    "lon": -71.249406,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Portsmouth High School",
+      "ncesId": "440087000207",
+      "enrollment": 785,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400870",
+      "districtName": "Portsmouth School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "providence": {
+    "displayName": "Providence School District",
+    "lat": 41.817493,
+    "lon": -71.420734,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Classical High School",
+      "ncesId": "440090000218",
+      "enrollment": 1116,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400900",
+      "districtName": "Providence School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "scituate": {
+    "displayName": "Scituate School District",
+    "lat": 41.824592,
+    "lon": -71.620875,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Scituate High School",
+      "ncesId": "440096000255",
+      "enrollment": 387,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400960",
+      "districtName": "Scituate School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "smithfield": {
+    "displayName": "Smithfield School District",
+    "lat": 41.880809,
+    "lon": -71.54398,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Smithfield High School",
+      "ncesId": "440099000259",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4400990",
+      "districtName": "Smithfield School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "south kingstown": {
+    "displayName": "South Kingstown School District",
+    "lat": 41.44659,
+    "lon": -71.494976,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "South Kingstown High",
+      "ncesId": "440102000265",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4401020",
+      "districtName": "South Kingstown School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "tiverton": {
+    "displayName": "Tiverton School District",
+    "lat": 41.628637,
+    "lon": -71.165378,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Tiverton High School",
+      "ncesId": "440105000274",
+      "enrollment": 430,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4401050",
+      "districtName": "Tiverton School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "warwick": {
+    "displayName": "Warwick School District",
+    "lat": 41.74624,
+    "lon": -71.41189,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Pilgrim High School",
+      "ncesId": "440111000301",
+      "enrollment": 1137,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4401110",
+      "districtName": "Warwick School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "west warwick": {
+    "displayName": "West Warwick School District",
+    "lat": 41.708569,
+    "lon": -71.515999,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "West Warwick High School",
+      "ncesId": "440114000318",
+      "enrollment": null,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4401140",
+      "districtName": "West Warwick School District"
+    },
+    "flags": [
+      "anchor_used_heuristic_no_enrollment",
+      "anchor_high_school"
+    ]
+  },
+  "westerly": {
+    "displayName": "Westerly School District",
+    "lat": 41.375788,
+    "lon": -71.81911,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Westerly High School",
+      "ncesId": "440117000325",
+      "enrollment": 650,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4401170",
+      "districtName": "Westerly School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  },
+  "woonsocket": {
+    "displayName": "Woonsocket School District",
+    "lat": 42.004113,
+    "lon": -71.485813,
+    "anchorType": "high_school",
+    "anchorSchool": {
+      "name": "Woonsocket High School",
+      "ncesId": "440120000345",
+      "enrollment": 1646,
+      "gradeLow": 9,
+      "gradeHigh": 12,
+      "gradeBucket": "High",
+      "districtGeoid": "4401200",
+      "districtName": "Woonsocket School District"
+    },
+    "flags": [
+      "anchor_high_school"
+    ]
+  }
+}

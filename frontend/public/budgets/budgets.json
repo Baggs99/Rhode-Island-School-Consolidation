@@ -1,0 +1,723 @@
+{
+  "barrington": {
+    "displayName": "Barrington",
+    "sourceFile": "Barrington Expenses and Revenues.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 67545120,
+    "centralAdministration": 814187,
+    "centralAdministrationModel": 814187,
+    "adminShareOfTotal": 0.012054,
+    "adminShareOfTotalModel": 0.012054,
+    "components": {
+      "districtManagement": 813104,
+      "programOperationsManagement": 1083
+    },
+    "componentsModel": {
+      "districtManagement": 813104,
+      "programOperationsManagement": 1083
+    },
+    "flags": []
+  },
+  "bristol warren": {
+    "displayName": "Bistol Warren Regional District",
+    "sourceFile": "Bistol Warren Regional District.csv",
+    "fiscalYear": "FY2023-24",
+    "totalExpenditures": 60953635,
+    "centralAdministration": 556879,
+    "centralAdministrationModel": 556879,
+    "adminShareOfTotal": 0.009136,
+    "adminShareOfTotalModel": 0.009136,
+    "components": {
+      "districtManagement": 538186,
+      "programOperationsManagement": 18693
+    },
+    "componentsModel": {
+      "districtManagement": 538186,
+      "programOperationsManagement": 18693
+    },
+    "flags": []
+  },
+  "burrillville": {
+    "displayName": "Burrillville",
+    "sourceFile": "Burrillville Expenses and Revenues.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 38052800,
+    "centralAdministration": 399423,
+    "centralAdministrationModel": 399423,
+    "adminShareOfTotal": 0.010497,
+    "adminShareOfTotalModel": 0.010497,
+    "components": {
+      "districtManagement": 399423,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 399423,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "central falls": {
+    "displayName": "Central Falls",
+    "sourceFile": "Central Falls.csv",
+    "fiscalYear": "FY2024-25",
+    "totalExpenditures": 54365494,
+    "centralAdministration": 819680,
+    "centralAdministrationModel": 819680,
+    "adminShareOfTotal": 0.015077,
+    "adminShareOfTotalModel": 0.015077,
+    "components": {
+      "districtManagement": 463140,
+      "programOperationsManagement": 356540
+    },
+    "componentsModel": {
+      "districtManagement": 463140,
+      "programOperationsManagement": 356540
+    },
+    "flags": []
+  },
+  "chariho": {
+    "displayName": "Chariho",
+    "sourceFile": "Chariho.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 82972790,
+    "centralAdministration": 882382,
+    "centralAdministrationModel": 882382,
+    "adminShareOfTotal": 0.010635,
+    "adminShareOfTotalModel": 0.010635,
+    "components": {
+      "districtManagement": 654052,
+      "programOperationsManagement": 228330
+    },
+    "componentsModel": {
+      "districtManagement": 654052,
+      "programOperationsManagement": 228330
+    },
+    "flags": []
+  },
+  "coventry": {
+    "displayName": "Coventry",
+    "sourceFile": "Coventry.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 83565565,
+    "centralAdministration": 814745,
+    "centralAdministrationModel": 814745,
+    "adminShareOfTotal": 0.00975,
+    "adminShareOfTotalModel": 0.00975,
+    "components": {
+      "districtManagement": 510217,
+      "programOperationsManagement": 304528
+    },
+    "componentsModel": {
+      "districtManagement": 510217,
+      "programOperationsManagement": 304528
+    },
+    "flags": []
+  },
+  "cranston": {
+    "displayName": "Cranston",
+    "sourceFile": "Cranston.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 189388837,
+    "centralAdministration": -392727,
+    "centralAdministrationModel": 360778,
+    "adminShareOfTotal": -0.002074,
+    "adminShareOfTotalModel": 0.001905,
+    "components": {
+      "districtManagement": 360778,
+      "programOperationsManagement": -753505
+    },
+    "componentsModel": {
+      "districtManagement": 360778,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "program_operations_management_negative"
+    ]
+  },
+  "cumberland": {
+    "displayName": "Cumberland",
+    "sourceFile": "Cumberland.csv",
+    "fiscalYear": "FY2023-24",
+    "totalExpenditures": 78910633,
+    "centralAdministration": 1145421,
+    "centralAdministrationModel": 1145421,
+    "adminShareOfTotal": 0.014515,
+    "adminShareOfTotalModel": 0.014515,
+    "components": {
+      "districtManagement": 559737,
+      "programOperationsManagement": 585684
+    },
+    "componentsModel": {
+      "districtManagement": 559737,
+      "programOperationsManagement": 585684
+    },
+    "flags": []
+  },
+  "east greenwich": {
+    "displayName": "East Greenwich",
+    "sourceFile": "East Greenwich.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 50185330,
+    "centralAdministration": 826116,
+    "centralAdministrationModel": 826116,
+    "adminShareOfTotal": 0.016461,
+    "adminShareOfTotalModel": 0.016461,
+    "components": {
+      "districtManagement": 681120,
+      "programOperationsManagement": 144996
+    },
+    "componentsModel": {
+      "districtManagement": 681120,
+      "programOperationsManagement": 144996
+    },
+    "flags": []
+  },
+  "east providence": {
+    "displayName": "East Providence",
+    "sourceFile": "East Providence.csv",
+    "fiscalYear": "FY2024-25",
+    "totalExpenditures": 99398450,
+    "centralAdministration": 836640,
+    "centralAdministrationModel": 836640,
+    "adminShareOfTotal": 0.008417,
+    "adminShareOfTotalModel": 0.008417,
+    "components": {
+      "districtManagement": 430582,
+      "programOperationsManagement": 406058
+    },
+    "componentsModel": {
+      "districtManagement": 430582,
+      "programOperationsManagement": 406058
+    },
+    "flags": []
+  },
+  "exeter west greenwich": {
+    "displayName": "Exeter-West Greenwich Regional School District",
+    "sourceFile": "Exeter-West Greenwich Regional School District.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 38525888,
+    "centralAdministration": 461952,
+    "centralAdministrationModel": 461952,
+    "adminShareOfTotal": 0.011991,
+    "adminShareOfTotalModel": 0.011991,
+    "components": {
+      "districtManagement": 461952,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 461952,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "foster glocester": {
+    "displayName": "Foster-Glocester",
+    "sourceFile": "Foster-Glocester This is messy Grouped Data.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 27304858,
+    "centralAdministration": 492874,
+    "centralAdministrationModel": 492874,
+    "adminShareOfTotal": 0.018051,
+    "adminShareOfTotalModel": 0.018051,
+    "components": {
+      "districtManagement": 492874,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 492874,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "foster": {
+    "displayName": "Foster",
+    "sourceFile": "Foster.csv",
+    "fiscalYear": "FY2023-24",
+    "totalExpenditures": 4965550,
+    "centralAdministration": 63300,
+    "centralAdministrationModel": 63300,
+    "adminShareOfTotal": 0.012748,
+    "adminShareOfTotalModel": 0.012748,
+    "components": {
+      "districtManagement": 63300,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 63300,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "glocester": {
+    "displayName": "Glocester",
+    "sourceFile": "Glocester.csv",
+    "fiscalYear": "FY2023-24",
+    "totalExpenditures": 9901109,
+    "centralAdministration": 112423,
+    "centralAdministrationModel": 112423,
+    "adminShareOfTotal": 0.011355,
+    "adminShareOfTotalModel": 0.011355,
+    "components": {
+      "districtManagement": 112423,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 112423,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "jamestown": {
+    "displayName": "Jamestown",
+    "sourceFile": "Jamestown.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 16456618,
+    "centralAdministration": 315798,
+    "centralAdministrationModel": 315798,
+    "adminShareOfTotal": 0.01919,
+    "adminShareOfTotalModel": 0.01919,
+    "components": {
+      "districtManagement": 315798,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 315798,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "johnston": {
+    "displayName": "Johnston",
+    "sourceFile": "Johnston - Weird 2025-2026 Expenses.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 73317453,
+    "centralAdministration": 34714268,
+    "centralAdministrationModel": 7331745,
+    "adminShareOfTotal": 0.473479,
+    "adminShareOfTotalModel": 0.1,
+    "components": {
+      "districtManagement": 34713768,
+      "programOperationsManagement": 500
+    },
+    "componentsModel": {
+      "districtManagement": 34713768,
+      "programOperationsManagement": 500
+    },
+    "flags": [
+      "admin_share_outlier",
+      "admin_share_capped_model"
+    ]
+  },
+  "lincoln": {
+    "displayName": "Lincoln",
+    "sourceFile": "Lincoln.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 71149479,
+    "centralAdministration": 503438,
+    "centralAdministrationModel": 503438,
+    "adminShareOfTotal": 0.007076,
+    "adminShareOfTotalModel": 0.007076,
+    "components": {
+      "districtManagement": 503438,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 503438,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "little compton": {
+    "displayName": "Little Compton",
+    "sourceFile": "Little Compton.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 9026130,
+    "centralAdministration": 258700,
+    "centralAdministrationModel": 258700,
+    "adminShareOfTotal": 0.028661,
+    "adminShareOfTotalModel": 0.028661,
+    "components": {
+      "districtManagement": 258700,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 258700,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "middletown": {
+    "displayName": "Middletown",
+    "sourceFile": "Middletown.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 46279270,
+    "centralAdministration": 1006942,
+    "centralAdministrationModel": 1006942,
+    "adminShareOfTotal": 0.021758,
+    "adminShareOfTotalModel": 0.021758,
+    "components": {
+      "districtManagement": 662720,
+      "programOperationsManagement": 344222
+    },
+    "componentsModel": {
+      "districtManagement": 662720,
+      "programOperationsManagement": 344222
+    },
+    "flags": []
+  },
+  "narragansett": {
+    "displayName": "Narragansett",
+    "sourceFile": "Narragansett.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 39521834,
+    "centralAdministration": 635692,
+    "centralAdministrationModel": 635692,
+    "adminShareOfTotal": 0.016085,
+    "adminShareOfTotalModel": 0.016085,
+    "components": {
+      "districtManagement": 635692,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 635692,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "new shoreham": {
+    "displayName": "New Shoreham",
+    "sourceFile": "New Shoreham.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 6106984,
+    "centralAdministration": 205867,
+    "centralAdministrationModel": 205867,
+    "adminShareOfTotal": 0.03371,
+    "adminShareOfTotalModel": 0.03371,
+    "components": {
+      "districtManagement": 205867,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 205867,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "newport": {
+    "displayName": "Newport",
+    "sourceFile": "Newport.csv",
+    "fiscalYear": "FY2024-25",
+    "totalExpenditures": 48470044,
+    "centralAdministration": 858588,
+    "centralAdministrationModel": 858588,
+    "adminShareOfTotal": 0.017714,
+    "adminShareOfTotalModel": 0.017714,
+    "components": {
+      "districtManagement": 738289,
+      "programOperationsManagement": 120299
+    },
+    "componentsModel": {
+      "districtManagement": 738289,
+      "programOperationsManagement": 120299
+    },
+    "flags": []
+  },
+  "north kingstown": {
+    "displayName": "North Kingstown",
+    "sourceFile": "North Kingstown.csv",
+    "fiscalYear": "FY2024-25",
+    "totalExpenditures": 79788066,
+    "centralAdministration": 837514,
+    "centralAdministrationModel": 837514,
+    "adminShareOfTotal": 0.010497,
+    "adminShareOfTotalModel": 0.010497,
+    "components": {
+      "districtManagement": 681516,
+      "programOperationsManagement": 155998
+    },
+    "componentsModel": {
+      "districtManagement": 681516,
+      "programOperationsManagement": 155998
+    },
+    "flags": []
+  },
+  "north providence": {
+    "displayName": "North Providence",
+    "sourceFile": "North Providence.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 65669577,
+    "centralAdministration": 462500,
+    "centralAdministrationModel": 462500,
+    "adminShareOfTotal": 0.007043,
+    "adminShareOfTotalModel": 0.007043,
+    "components": {
+      "districtManagement": 462500,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 462500,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "north smithfield": {
+    "displayName": "North Smithfield",
+    "sourceFile": "North Smithfield.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 33922618,
+    "centralAdministration": 405610,
+    "centralAdministrationModel": 405610,
+    "adminShareOfTotal": 0.011957,
+    "adminShareOfTotalModel": 0.011957,
+    "components": {
+      "districtManagement": 405610,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 405610,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "pawtucket": {
+    "displayName": "Pawtucket",
+    "sourceFile": "Pawtucket.csv",
+    "fiscalYear": "FY2023-24",
+    "totalExpenditures": 138030108,
+    "centralAdministration": 1199602,
+    "centralAdministrationModel": 1199602,
+    "adminShareOfTotal": 0.008691,
+    "adminShareOfTotalModel": 0.008691,
+    "components": {
+      "districtManagement": 712420,
+      "programOperationsManagement": 487182
+    },
+    "componentsModel": {
+      "districtManagement": 712420,
+      "programOperationsManagement": 487182
+    },
+    "flags": []
+  },
+  "portsmouth": {
+    "displayName": "Portsmouth",
+    "sourceFile": "Portsmouth.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 50230242,
+    "centralAdministration": 986319,
+    "centralAdministrationModel": 986319,
+    "adminShareOfTotal": 0.019636,
+    "adminShareOfTotalModel": 0.019636,
+    "components": {
+      "districtManagement": 451777,
+      "programOperationsManagement": 534542
+    },
+    "componentsModel": {
+      "districtManagement": 451777,
+      "programOperationsManagement": 534542
+    },
+    "flags": []
+  },
+  "providence": {
+    "displayName": "Providence",
+    "sourceFile": "Providence.csv",
+    "fiscalYear": "FY2024-25",
+    "totalExpenditures": 445048116,
+    "centralAdministration": 1173587,
+    "centralAdministrationModel": 1173587,
+    "adminShareOfTotal": 0.002637,
+    "adminShareOfTotalModel": 0.002637,
+    "components": {
+      "districtManagement": 1089900,
+      "programOperationsManagement": 83687
+    },
+    "componentsModel": {
+      "districtManagement": 1089900,
+      "programOperationsManagement": 83687
+    },
+    "flags": []
+  },
+  "scituate": {
+    "displayName": "Scituate",
+    "sourceFile": "Scituate.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 26232817,
+    "centralAdministration": 406719,
+    "centralAdministrationModel": 406719,
+    "adminShareOfTotal": 0.015504,
+    "adminShareOfTotalModel": 0.015504,
+    "components": {
+      "districtManagement": 406719,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 406719,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "smithfield": {
+    "displayName": "Smithfield",
+    "sourceFile": "Smithfield.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 49140885,
+    "centralAdministration": 513862,
+    "centralAdministrationModel": 513862,
+    "adminShareOfTotal": 0.010457,
+    "adminShareOfTotalModel": 0.010457,
+    "components": {
+      "districtManagement": 511061,
+      "programOperationsManagement": 2801
+    },
+    "componentsModel": {
+      "districtManagement": 511061,
+      "programOperationsManagement": 2801
+    },
+    "flags": []
+  },
+  "south kingstown": {
+    "displayName": "South Kingstown",
+    "sourceFile": "South Kingstown.csv",
+    "fiscalYear": "FY2024-25",
+    "totalExpenditures": 68583634,
+    "centralAdministration": 555833,
+    "centralAdministrationModel": 555833,
+    "adminShareOfTotal": 0.008104,
+    "adminShareOfTotalModel": 0.008104,
+    "components": {
+      "districtManagement": 555833,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 555833,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_program_operations_management"
+    ]
+  },
+  "tiverton": {
+    "displayName": "Tiverton",
+    "sourceFile": "Tiverton - Rough Data.csv",
+    "fiscalYear": "FY2024-25",
+    "totalExpenditures": 37390326,
+    "centralAdministration": 0,
+    "centralAdministrationModel": 0,
+    "adminShareOfTotal": 0,
+    "adminShareOfTotalModel": 0,
+    "components": {
+      "districtManagement": 0,
+      "programOperationsManagement": 0
+    },
+    "componentsModel": {
+      "districtManagement": 0,
+      "programOperationsManagement": 0
+    },
+    "flags": [
+      "missing_district_management",
+      "missing_program_operations_management",
+      "no_detail2_column"
+    ]
+  },
+  "warwick": {
+    "displayName": "Warwick",
+    "sourceFile": "Warwick.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 198167317,
+    "centralAdministration": 931395,
+    "centralAdministrationModel": 931395,
+    "adminShareOfTotal": 0.0047,
+    "adminShareOfTotalModel": 0.0047,
+    "components": {
+      "districtManagement": 498250,
+      "programOperationsManagement": 433145
+    },
+    "componentsModel": {
+      "districtManagement": 498250,
+      "programOperationsManagement": 433145
+    },
+    "flags": []
+  },
+  "west warwick": {
+    "displayName": "West Warwick",
+    "sourceFile": "West Warwick.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 80107981,
+    "centralAdministration": 1182144,
+    "centralAdministrationModel": 1182144,
+    "adminShareOfTotal": 0.014757,
+    "adminShareOfTotalModel": 0.014757,
+    "components": {
+      "districtManagement": 722773,
+      "programOperationsManagement": 459371
+    },
+    "componentsModel": {
+      "districtManagement": 722773,
+      "programOperationsManagement": 459371
+    },
+    "flags": []
+  },
+  "westerly": {
+    "displayName": "Westerly",
+    "sourceFile": "Westerly.csv",
+    "fiscalYear": "FY2025-26",
+    "totalExpenditures": 63556652,
+    "centralAdministration": 737010,
+    "centralAdministrationModel": 737010,
+    "adminShareOfTotal": 0.011596,
+    "adminShareOfTotalModel": 0.011596,
+    "components": {
+      "districtManagement": 730410,
+      "programOperationsManagement": 6600
+    },
+    "componentsModel": {
+      "districtManagement": 730410,
+      "programOperationsManagement": 6600
+    },
+    "flags": []
+  },
+  "woonsocket": {
+    "displayName": "Woonsocket",
+    "sourceFile": "Woonsocket.csv",
+    "fiscalYear": "FY2023-24",
+    "totalExpenditures": 110411555,
+    "centralAdministration": 878395,
+    "centralAdministrationModel": 878395,
+    "adminShareOfTotal": 0.007956,
+    "adminShareOfTotalModel": 0.007956,
+    "components": {
+      "districtManagement": 629462,
+      "programOperationsManagement": 248933
+    },
+    "componentsModel": {
+      "districtManagement": 629462,
+      "programOperationsManagement": 248933
+    },
+    "flags": []
+  }
+}

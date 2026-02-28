@@ -1,0 +1,218 @@
+{
+  "foster glocester": {
+    "displayName": "Foster-Glocester Regional School District",
+    "lat": 41.829417,
+    "lon": -71.686315,
+    "flags": []
+  },
+  "exeter west greenwich": {
+    "displayName": "Exeter-West Greenwich Regional School District",
+    "lat": 41.580956,
+    "lon": -71.649644,
+    "flags": []
+  },
+  "foster": {
+    "displayName": "Foster Elementary School District",
+    "lat": 41.790828,
+    "lon": -71.731557,
+    "flags": []
+  },
+  "glocester": {
+    "displayName": "Glocester Elementary School District",
+    "lat": 41.894037,
+    "lon": -71.68621,
+    "flags": []
+  },
+  "jamestown": {
+    "displayName": "Jamestown School District",
+    "lat": 41.522585,
+    "lon": -71.367269,
+    "flags": []
+  },
+  "little compton": {
+    "displayName": "Little Compton School District",
+    "lat": 41.507556,
+    "lon": -71.168736,
+    "flags": []
+  },
+  "barrington": {
+    "displayName": "Barrington School District",
+    "lat": 41.728067,
+    "lon": -71.324805,
+    "flags": []
+  },
+  "bristol warren": {
+    "displayName": "Bristol-Warren Regional School District",
+    "lat": 41.700071,
+    "lon": -71.268673,
+    "flags": []
+  },
+  "burrillville": {
+    "displayName": "Burrillville School District",
+    "lat": 41.970963,
+    "lon": -71.694753,
+    "flags": []
+  },
+  "central falls": {
+    "displayName": "Central Falls School District",
+    "lat": 41.890452,
+    "lon": -71.393751,
+    "flags": []
+  },
+  "chariho": {
+    "displayName": "Chariho Regional School District",
+    "lat": 41.421116,
+    "lon": -71.699308,
+    "flags": []
+  },
+  "coventry": {
+    "displayName": "Coventry School District",
+    "lat": 41.693677,
+    "lon": -71.66128,
+    "flags": []
+  },
+  "cranston": {
+    "displayName": "Cranston School District",
+    "lat": 41.768635,
+    "lon": -71.468144,
+    "flags": []
+  },
+  "cumberland": {
+    "displayName": "Cumberland School District",
+    "lat": 41.956173,
+    "lon": -71.434331,
+    "flags": []
+  },
+  "east greenwich": {
+    "displayName": "East Greenwich School District",
+    "lat": 41.633043,
+    "lon": -71.494706,
+    "flags": []
+  },
+  "east providence": {
+    "displayName": "East Providence School District",
+    "lat": 41.798482,
+    "lon": -71.356565,
+    "flags": []
+  },
+  "johnston": {
+    "displayName": "Johnston School District",
+    "lat": 41.8287,
+    "lon": -71.518289,
+    "flags": []
+  },
+  "lincoln": {
+    "displayName": "Lincoln School District",
+    "lat": 41.925926,
+    "lon": -71.442542,
+    "flags": []
+  },
+  "middletown": {
+    "displayName": "Middletown School District",
+    "lat": 41.520246,
+    "lon": -71.279254,
+    "flags": []
+  },
+  "narragansett": {
+    "displayName": "Narragansett School District",
+    "lat": 41.406116,
+    "lon": -71.491473,
+    "flags": []
+  },
+  "new shoreham": {
+    "displayName": "New Shoreham School District",
+    "lat": 41.194926,
+    "lon": -71.577842,
+    "flags": []
+  },
+  "newport": {
+    "displayName": "Newport School District",
+    "lat": 41.486088,
+    "lon": -71.32467,
+    "flags": []
+  },
+  "north kingstown": {
+    "displayName": "North Kingstown School District",
+    "lat": 41.576086,
+    "lon": -71.451485,
+    "flags": []
+  },
+  "north providence": {
+    "displayName": "North Providence School District",
+    "lat": 41.857838,
+    "lon": -71.456481,
+    "flags": []
+  },
+  "north smithfield": {
+    "displayName": "North Smithfield School District",
+    "lat": 41.974366,
+    "lon": -71.545345,
+    "flags": []
+  },
+  "pawtucket": {
+    "displayName": "Pawtucket School District",
+    "lat": 41.877597,
+    "lon": -71.37797,
+    "flags": []
+  },
+  "portsmouth": {
+    "displayName": "Portsmouth School District",
+    "lat": 41.59357,
+    "lon": -71.297798,
+    "flags": []
+  },
+  "providence": {
+    "displayName": "Providence School District",
+    "lat": 41.817106,
+    "lon": -71.421085,
+    "flags": []
+  },
+  "scituate": {
+    "displayName": "Scituate School District",
+    "lat": 41.79309,
+    "lon": -71.619181,
+    "flags": []
+  },
+  "smithfield": {
+    "displayName": "Smithfield School District",
+    "lat": 41.900994,
+    "lon": -71.528535,
+    "flags": []
+  },
+  "south kingstown": {
+    "displayName": "South Kingstown School District",
+    "lat": 41.411742,
+    "lon": -71.54909,
+    "flags": []
+  },
+  "tiverton": {
+    "displayName": "Tiverton School District",
+    "lat": 41.616951,
+    "lon": -71.176442,
+    "flags": []
+  },
+  "warwick": {
+    "displayName": "Warwick School District",
+    "lat": 41.698865,
+    "lon": -71.42229,
+    "flags": []
+  },
+  "west warwick": {
+    "displayName": "West Warwick School District",
+    "lat": 41.696203,
+    "lon": -71.509148,
+    "flags": []
+  },
+  "westerly": {
+    "displayName": "Westerly School District",
+    "lat": 41.302014,
+    "lon": -71.818243,
+    "flags": []
+  },
+  "woonsocket": {
+    "displayName": "Woonsocket School District",
+    "lat": 41.998442,
+    "lon": -71.49911,
+    "flags": []
+  }
+}
