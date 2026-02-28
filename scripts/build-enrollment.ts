@@ -28,41 +28,7 @@ const SCHOOL_CSV_CANDIDATES = [
 ];
 const SCHOOL_CSV = SCHOOL_CSV_CANDIDATES.find((p) => fs.existsSync(p)) ?? SCHOOL_CSV_CANDIDATES[0];
 
-/** Alias: GeoJSON/NCES name -> RIDE name (normalized keys). Add entries when lookup fails. */
-const DISTRICT_ALIASES: Record<string, string> = {
-};
-
-/** Normalize for lookup key. Must match frontend src/lib/enrollment.ts */
-function normalize(s: string): string {
-  if (!s || typeof s !== 'string') return '';
-  let t = s
-    .toLowerCase()
-    .trim()
-    .replace(/\s*&\s*/g, ' and ')
-    .replace(/[-–—]/g, ' ')
-    .replace(/[^\w\s]/g, '')
-    .replace(/\s*\([^)]*\)\s*/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const suffixes = [
-    ' regional school district',
-    ' school district',
-    ' public schools',
-  ];
-  for (const suf of suffixes) {
-    if (t.endsWith(suf)) { t = t.slice(0, -suf.length).trim(); break; }
-  }
-  const levelSuffixes = [' elementary', ' secondary'];
-  for (const suf of levelSuffixes) {
-    if (t.endsWith(suf)) { t = t.slice(0, -suf.length).trim(); break; }
-  }
-  return t;
-}
-
-function resolveDistrictKey(name: string): string {
-  const k = normalize(name);
-  return DISTRICT_ALIASES[k] ?? k;
-}
+import { normalizeDistrictName as normalize, districtKey as resolveDistrictKey } from './lib/normalize';
 
 interface LeaRow {
   distcode?: string;

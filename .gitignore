@@ -9,5 +9,7 @@ data/raw/*.zip
 *.log
 .DS_Store
 
-# Generated enrollment JSON (rebuild with: npm run build:enrollment)
+# Generated JSON (rebuild via predev or individually)
 frontend/public/enrollment/
+frontend/public/budgets/
+frontend/public/centroids/

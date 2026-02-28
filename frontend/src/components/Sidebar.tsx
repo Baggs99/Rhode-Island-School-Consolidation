@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import Fuse from 'fuse.js';
 import type { GeoJSONFC, SchoolFeature, DistrictFeature } from '../types';
 import {
@@ -8,6 +8,9 @@ import {
   type SchoolEnrollmentMap,
   type Demographics,
 } from '../lib/enrollment';
+import type { BudgetsMap } from '../lib/budgets';
+import type { DistrictAnchorsMap } from '../lib/anchors';
+import { computeConsolidationV1, type ConsolidationParamsV1 } from '../lib/consolidationV1';
 
 interface SidebarProps {
   districts: GeoJSONFC<DistrictFeature> | null;
@@ -27,12 +30,19 @@ interface SidebarProps {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   selectedDistrict: DistrictFeature | null;
+  selectedDistrictKeys: string[];
   selectedSchool: SchoolFeature | null;
   leaEnrollment: LeaEnrollmentMap | null;
   schoolEnrollment: SchoolEnrollmentMap | null;
   enrollmentLoadError: string | null;
+  budgets: BudgetsMap | null;
+  anchors: DistrictAnchorsMap | null;
+  showAnchors: boolean;
+  setShowAnchors: (v: boolean) => void;
   onSearchSelect: (school?: SchoolFeature, district?: DistrictFeature) => void;
   onClearSelection: () => void;
+  sandboxDistrictKeys: string[];
+  setSandboxDistrictKeys: Dispatch<SetStateAction<string[]>>;
 }
 
 const GRADE_OPTIONS = ['Elementary', 'Middle', 'High', 'Other'] as const;
@@ -101,6 +111,10 @@ function GenderSplit({ demographics, total }: { demographics: Demographics; tota
   );
 }
 
+const $ = (n: number) => `$${Math.round(n).toLocaleString()}`;
+const $pp = (n: number) => `$${Math.round(n).toLocaleString()}`;
+const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
+
 export default function Sidebar({
   districts,
   schools,
@@ -119,12 +133,19 @@ export default function Sidebar({
   searchQuery,
   setSearchQuery,
   selectedDistrict,
+  selectedDistrictKeys,
   selectedSchool,
   leaEnrollment,
   schoolEnrollment,
   enrollmentLoadError,
+  budgets,
+  anchors,
+  showAnchors,
+  setShowAnchors,
   onSearchSelect,
   onClearSelection,
+  sandboxDistrictKeys,
+  setSandboxDistrictKeys,
 }: SidebarProps) {
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -173,6 +194,13 @@ export default function Sidebar({
     return schoolEnrollment[key] ?? null;
   }, [selectedSchool, schoolEnrollment]);
 
+  const districtBudget = useMemo(() => {
+    if (!selectedDistrict || !budgets) return null;
+    const name = selectedDistrict.properties.district_name ?? selectedDistrict.properties.name ?? '';
+    const key = districtKey(name);
+    return budgets[key] ?? null;
+  }, [selectedDistrict, budgets]);
+
   const districtCounts = useMemo(() => {
     if (!schools?.features?.length || !selectedDistrict) return { public: 0, private: 0 };
     const geoid = selectedDistrict.properties.district_geoid ?? selectedDistrict.properties.geoid;
@@ -186,6 +214,77 @@ export default function Sidebar({
     });
     return { public: publicCount, private: privateCount };
   }, [schools, selectedDistrict]);
+
+  const [consolidationParams, setConsolidationParams] = useState<ConsolidationParamsV1>({
+    adminReductionRate: 1.0,
+    costPerStudentMile: 3.0,
+    affectedShare: 1.0,
+  });
+
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // --- Consolidation Sandbox ---
+  const [sandboxSearch, setSandboxSearch] = useState('');
+
+  const districtOptions = useMemo(() => {
+    if (!districts?.features) return [];
+    const seen = new Set<string>();
+    const opts: Array<{ key: string; name: string }> = [];
+    for (const f of districts.features) {
+      const name = f.properties.district_name ?? f.properties.name ?? '';
+      const key = districtKey(name);
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        opts.push({ key, name });
+      }
+    }
+    opts.sort((a, b) => a.name.localeCompare(b.name));
+    return opts;
+  }, [districts]);
+
+  const districtNameByKey = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const d of districtOptions) m.set(d.key, d.name);
+    return m;
+  }, [districtOptions]);
+
+  const sandboxFuse = useMemo(
+    () => new Fuse(districtOptions, { keys: ['name'], threshold: 0.4 }),
+    [districtOptions],
+  );
+
+  const sandboxSearchResults = useMemo(() => {
+    if (!sandboxSearch.trim()) return [];
+    return sandboxFuse
+      .search(sandboxSearch.trim())
+      .map((r) => r.item)
+      .filter((d) => !sandboxDistrictKeys.includes(d.key))
+      .slice(0, 8);
+  }, [sandboxSearch, sandboxFuse, sandboxDistrictKeys]);
+
+  const sandboxResult = useMemo(() => {
+    if (sandboxDistrictKeys.length < 2 || !budgets || !leaEnrollment || !anchors) return null;
+    return computeConsolidationV1(sandboxDistrictKeys, budgets, leaEnrollment, anchors, consolidationParams);
+  }, [sandboxDistrictKeys, budgets, leaEnrollment, anchors, consolidationParams]);
+
+  const sandboxDataReady = budgets !== null && leaEnrollment !== null && anchors !== null;
+
+  const getDisplayName = (key: string) =>
+    districtNameByKey.get(key) ?? anchors?.[key]?.displayName ?? budgets?.[key]?.displayName ?? key;
+
+  const addToSandbox = (key: string) => {
+    setSandboxDistrictKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+  };
+
+  const removeFromSandbox = (key: string) => {
+    setSandboxDistrictKeys((prev) => prev.filter((k) => k !== key));
+  };
+
+  const mapDistrictKey = selectedDistrict
+    ? districtKey(selectedDistrict.properties.district_name ?? selectedDistrict.properties.name ?? '')
+    : null;
+
+  const mapDistrictInSandbox = mapDistrictKey ? sandboxDistrictKeys.includes(mapDistrictKey) : false;
 
   const toggleGrade = (g: string) => {
     const next = filters.grade.includes(g)
@@ -259,106 +358,483 @@ export default function Sidebar({
         )}
       </div>
 
-      <div style={{ padding: 16, borderBottom: '1px solid #eee' }}>
-        <div style={{ fontWeight: 600, marginBottom: 10, fontSize: 14 }}>Filters</div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={filters.public}
-            onChange={() => setFilters({ ...filters, public: !filters.public })}
-          />
-          Public
-        </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={filters.private}
-            onChange={() => setFilters({ ...filters, private: !filters.private })}
-          />
-          Private
-        </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={clusterSchools}
-            onChange={() => setClusterSchools(!clusterSchools)}
-          />
-          Cluster schools
-        </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={showDistricts}
-            onChange={() => setShowDistricts(!showDistricts)}
-          />
-          Show district boundaries
-        </label>
-        {showDistricts && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 24, marginBottom: 8, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={showDistrictLabels}
-              onChange={() => setShowDistrictLabels(!showDistrictLabels)}
-            />
-            Show district labels
-          </label>
-        )}
-        {showDistricts && (
-          <div style={{ marginLeft: 24, marginBottom: 8 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+      <div style={{ borderBottom: '1px solid #eee' }}>
+        <button
+          onClick={() => setFiltersOpen((v) => !v)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: 14,
+            color: '#333',
+          }}
+        >
+          Filters
+          <span
+            style={{
+              fontSize: 12,
+              color: '#999',
+              transition: 'transform 0.2s',
+              transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          >
+            ▼
+          </span>
+        </button>
+        {filtersOpen && (
+          <div style={{ padding: '0 16px 16px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
               <input
                 type="checkbox"
-                checked={districtLevelFilter.unified}
-                onChange={() =>
-                  setDistrictLevelFilter({ ...districtLevelFilter, unified: !districtLevelFilter.unified })
-                }
+                checked={filters.public}
+                onChange={() => setFilters({ ...filters, public: !filters.public })}
               />
-              Unified
+              Public
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
               <input
                 type="checkbox"
-                checked={districtLevelFilter.elementary}
-                onChange={() =>
-                  setDistrictLevelFilter({ ...districtLevelFilter, elementary: !districtLevelFilter.elementary })
-                }
+                checked={filters.private}
+                onChange={() => setFilters({ ...filters, private: !filters.private })}
               />
-              Elementary
+              Private
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
               <input
                 type="checkbox"
-                checked={districtLevelFilter.secondary}
-                onChange={() =>
-                  setDistrictLevelFilter({ ...districtLevelFilter, secondary: !districtLevelFilter.secondary })
-                }
+                checked={clusterSchools}
+                onChange={() => setClusterSchools(!clusterSchools)}
               />
-              Secondary
+              Cluster schools
             </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={showAnchors}
+                onChange={() => setShowAnchors(!showAnchors)}
+              />
+              Show district anchors (HS/Elem)
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={showDistricts}
+                onChange={() => setShowDistricts(!showDistricts)}
+              />
+              Show district boundaries
+            </label>
+            {showDistricts && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 24, marginBottom: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={showDistrictLabels}
+                  onChange={() => setShowDistrictLabels(!showDistrictLabels)}
+                />
+                Show district labels
+              </label>
+            )}
+            {showDistricts && (
+              <div style={{ marginLeft: 24, marginBottom: 8 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={districtLevelFilter.unified}
+                    onChange={() =>
+                      setDistrictLevelFilter({ ...districtLevelFilter, unified: !districtLevelFilter.unified })
+                    }
+                  />
+                  Unified
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={districtLevelFilter.elementary}
+                    onChange={() =>
+                      setDistrictLevelFilter({ ...districtLevelFilter, elementary: !districtLevelFilter.elementary })
+                    }
+                  />
+                  Elementary
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={districtLevelFilter.secondary}
+                    onChange={() =>
+                      setDistrictLevelFilter({ ...districtLevelFilter, secondary: !districtLevelFilter.secondary })
+                    }
+                  />
+                  Secondary
+                </label>
+              </div>
+            )}
+            <div style={{ marginTop: 12, fontSize: 13, color: '#666' }}>Grade level</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+              {GRADE_OPTIONS.map((g) => (
+                <button
+                  key={g}
+                  onClick={() => toggleGrade(g)}
+                  style={{
+                    padding: '6px 10px',
+                    border: `1px solid ${filters.grade.includes(g) ? '#1976d2' : '#ccc'}`,
+                    background: filters.grade.includes(g) ? '#e3f2fd' : '#fff',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: 12,
+                  }}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
           </div>
         )}
-        <div style={{ marginTop: 12, fontSize: 13, color: '#666' }}>Grade level</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-          {GRADE_OPTIONS.map((g) => (
-            <button
-              key={g}
-              onClick={() => toggleGrade(g)}
-              style={{
-                padding: '6px 10px',
-                border: `1px solid ${filters.grade.includes(g) ? '#1976d2' : '#ccc'}`,
-                background: filters.grade.includes(g) ? '#e3f2fd' : '#fff',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 12,
-              }}
-            >
-              {g}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+        {/* ── Consolidation Sandbox (V1) ── */}
+        <div
+          style={{
+            background: '#fafafa',
+            border: '1px solid #e0e0e0',
+            padding: 14,
+            borderRadius: 8,
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 10, color: '#333' }}>
+            Consolidation Sandbox (V1)
+          </div>
+
+          {/* District picker */}
+          <div style={{ position: 'relative', marginBottom: 8 }}>
+            <input
+              type="text"
+              placeholder="Add district…"
+              value={sandboxSearch}
+              onChange={(e) => setSandboxSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                fontSize: 13,
+                boxSizing: 'border-box',
+              }}
+            />
+            {sandboxSearchResults.length > 0 && (
+              <ul
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  margin: 0,
+                  padding: 0,
+                  listStyle: 'none',
+                  background: '#fff',
+                  border: '1px solid #ccc',
+                  borderTop: 'none',
+                  borderRadius: '0 0 6px 6px',
+                  maxHeight: 180,
+                  overflowY: 'auto',
+                  zIndex: 10,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                }}
+              >
+                {sandboxSearchResults.map((d) => (
+                  <li
+                    key={d.key}
+                    onClick={() => {
+                      addToSandbox(d.key);
+                      setSandboxSearch('');
+                    }}
+                    style={{
+                      padding: '8px 10px',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      borderBottom: '1px solid #f0f0f0',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = '#e3f2fd';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = '#fff';
+                    }}
+                  >
+                    {d.name}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Selected district chips */}
+          {sandboxDistrictKeys.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+              {sandboxDistrictKeys.map((key) => (
+                <span
+                  key={key}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '4px 8px',
+                    background: '#e3f2fd',
+                    border: '1px solid #90caf9',
+                    borderRadius: 16,
+                    fontSize: 12,
+                    color: '#1565c0',
+                  }}
+                >
+                  {getDisplayName(key)}
+                  <button
+                    onClick={() => removeFromSandbox(key)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0 2px',
+                      fontSize: 14,
+                      lineHeight: 1,
+                      color: '#1565c0',
+                    }}
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Convenience buttons */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+            <button
+              onClick={() => {
+                if (mapDistrictKey) addToSandbox(mapDistrictKey);
+              }}
+              disabled={!mapDistrictKey || mapDistrictInSandbox}
+              title={
+                !mapDistrictKey
+                  ? 'Click a district on the map first'
+                  : mapDistrictInSandbox
+                    ? 'Already in sandbox'
+                    : `Add ${getDisplayName(mapDistrictKey)}`
+              }
+              style={{
+                flex: 1,
+                padding: '6px 8px',
+                fontSize: 12,
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                background: !mapDistrictKey || mapDistrictInSandbox ? '#f5f5f5' : '#e8f5e9',
+                color: !mapDistrictKey || mapDistrictInSandbox ? '#999' : '#2e7d32',
+                cursor: !mapDistrictKey || mapDistrictInSandbox ? 'default' : 'pointer',
+                fontWeight: 500,
+              }}
+            >
+              + Add map selection
+            </button>
+            <button
+              onClick={() => setSandboxDistrictKeys([])}
+              disabled={sandboxDistrictKeys.length === 0}
+              style={{
+                padding: '6px 10px',
+                fontSize: 12,
+                border: '1px solid #ccc',
+                borderRadius: 6,
+                background: sandboxDistrictKeys.length === 0 ? '#f5f5f5' : '#fff',
+                color: sandboxDistrictKeys.length === 0 ? '#999' : '#c62828',
+                cursor: sandboxDistrictKeys.length === 0 ? 'default' : 'pointer',
+                fontWeight: 500,
+              }}
+            >
+              Clear
+            </button>
+          </div>
+
+          {/* Data loading indicator */}
+          {!sandboxDataReady && (
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>
+              Loading budget, enrollment &amp; anchor data…
+            </div>
+          )}
+
+          {/* Parameter controls */}
+          <div style={{ marginBottom: 12, padding: '8px 0', borderTop: '1px solid #e0e0e0' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>Parameters</div>
+            <label style={{ display: 'block', marginBottom: 6, fontSize: 12 }}>
+              Spoke admin reduction: {Math.round(consolidationParams.adminReductionRate * 100)}%
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(consolidationParams.adminReductionRate * 100)}
+                onChange={(e) =>
+                  setConsolidationParams((p) => ({ ...p, adminReductionRate: Number(e.target.value) / 100 }))
+                }
+                style={{ width: '100%', marginTop: 2 }}
+              />
+            </label>
+            <label style={{ display: 'block', marginBottom: 6, fontSize: 12 }}>
+              Students busing further: {Math.round(consolidationParams.affectedShare * 100)}%
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(consolidationParams.affectedShare * 100)}
+                onChange={(e) =>
+                  setConsolidationParams((p) => ({ ...p, affectedShare: Number(e.target.value) / 100 }))
+                }
+                style={{ width: '100%', marginTop: 2 }}
+              />
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+              Cost per student-mile: $
+              <input
+                type="number"
+                min={0}
+                step={0.25}
+                value={consolidationParams.costPerStudentMile}
+                onChange={(e) =>
+                  setConsolidationParams((p) => ({ ...p, costPerStudentMile: Math.max(0, Number(e.target.value)) }))
+                }
+                style={{ width: 70, padding: '3px 6px', borderRadius: 4, border: '1px solid #ccc' }}
+              />
+            </label>
+          </div>
+
+          {/* Computation results */}
+          {sandboxDistrictKeys.length < 2 ? (
+            <div style={{ fontSize: 12, color: '#888', fontStyle: 'italic' }}>
+              Add at least 2 districts to simulate consolidation.
+            </div>
+          ) : !sandboxDataReady ? null : sandboxResult && !sandboxResult.ok ? (
+            <div style={{ padding: 10, background: '#fff3e0', borderRadius: 6, fontSize: 12 }}>
+              <div style={{ color: '#c62828', fontWeight: 600, marginBottom: 6 }}>
+                Cannot compute estimate — missing data:
+              </div>
+              {sandboxResult.missing.budgets.length > 0 && (
+                <div style={{ color: '#c62828', marginBottom: 2 }}>
+                  Budget: {sandboxResult.missing.budgets.join(', ')}
+                </div>
+              )}
+              {sandboxResult.missing.enrollment.length > 0 && (
+                <div style={{ color: '#c62828', marginBottom: 2 }}>
+                  Enrollment: {sandboxResult.missing.enrollment.join(', ')}
+                </div>
+              )}
+              {sandboxResult.missing.anchors.length > 0 && (
+                <div style={{ color: '#c62828' }}>
+                  Anchors: {sandboxResult.missing.anchors.join(', ')}
+                </div>
+              )}
+            </div>
+          ) : sandboxResult ? (
+            <div style={{ fontSize: 13 }}>
+              <div style={{ marginBottom: 8 }}>
+                <strong>Hub:</strong> {sandboxResult.hubName}{' '}
+                <span style={{ color: '#555', fontSize: 12 }}>
+                  ({(leaEnrollment?.[sandboxResult.hubKey]?.total ?? 0).toLocaleString()} students)
+                </span>
+              </div>
+
+              <div style={{ marginBottom: 8, padding: '6px 0', borderTop: '1px solid #e0e0e0' }}>
+                <div><strong>Combined enrollment:</strong> {sandboxResult.combinedEnrollment.toLocaleString()}</div>
+                <div><strong>Combined spending:</strong> {$(sandboxResult.combinedSpending)}</div>
+                <div><strong>Baseline per-pupil:</strong> {$pp(sandboxResult.baselinePerPupil)}</div>
+              </div>
+
+              <div style={{ marginBottom: 8, padding: '6px 0', borderTop: '1px solid #e0e0e0' }}>
+                <div>
+                  <strong>Admin savings:</strong>{' '}
+                  <span style={{ color: '#2e7d32' }}>{$(sandboxResult.adminSavings)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
+                  {pct(sandboxResult.adminSavingsPctCombined)} of combined budget
+                </div>
+                <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
+                  Hub admin: {$(sandboxResult.adminBaselineHub)} · Spoke admin: {$(sandboxResult.adminBaselineSpokes)}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 8, padding: '6px 0', borderTop: '1px solid #e0e0e0' }}>
+                <div>
+                  <strong>Transportation increase:</strong>{' '}
+                  <span style={{ color: '#c62828' }}>{$(sandboxResult.transportationIncrease)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
+                  {pct(sandboxResult.transportIncreasePctCombined)} of combined budget
+                </div>
+                {sandboxResult.spokeBreakdown.length > 0 && (
+                  <div style={{ marginTop: 4, fontSize: 11, color: '#555' }}>
+                    {sandboxResult.spokeBreakdown.slice(0, 5).map((s) => (
+                      <div key={s.key} style={{ marginTop: 2 }}>
+                        {s.name}: {s.distanceMiles} mi × {s.enrollment.toLocaleString()} × {Math.round(consolidationParams.affectedShare * 100)}% × ${consolidationParams.costPerStudentMile.toFixed(2)} = {$(s.cost)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: 8, padding: '6px 0', borderTop: '1px solid #e0e0e0' }}>
+                <div>
+                  <strong>Net impact:</strong>{' '}
+                  <span
+                    style={{
+                      color: sandboxResult.netImpact >= 0 ? '#2e7d32' : '#c62828',
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}
+                  >
+                    {sandboxResult.netImpact >= 0
+                      ? `+${$(sandboxResult.netImpact)}`
+                      : `-${$(Math.abs(sandboxResult.netImpact))}`}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>
+                  {sandboxResult.netImpact >= 0 ? 'Net savings (positive)' : 'Net cost (negative)'}
+                  {' · '}{pct(sandboxResult.netImpactPctCombined)} of combined budget
+                </div>
+                {sandboxResult.spokesSpending > 0 && (
+                  <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>
+                    vs spokes budget: {pct(sandboxResult.netImpactPctSpokesSpending)}
+                  </div>
+                )}
+                <div style={{ marginTop: 4 }}>
+                  <strong>Projected spending:</strong> {$(sandboxResult.projectedSpending)}
+                </div>
+                <div>
+                  <strong>Projected per-pupil:</strong> {$pp(sandboxResult.projectedPerPupil)}
+                </div>
+              </div>
+
+              {sandboxResult.warnings.length > 0 && (
+                <div
+                  style={{
+                    padding: '6px 8px',
+                    background: '#fff3e0',
+                    borderRadius: 4,
+                    fontSize: 11,
+                    color: '#e65100',
+                  }}
+                >
+                  <strong>Warnings:</strong>
+                  {sandboxResult.warnings.map((w, i) => (
+                    <div key={i}>· {w}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+
         {error && (
           <div style={{ color: '#c62828', fontSize: 14, marginBottom: 16 }}>{error}</div>
         )}
@@ -414,6 +890,40 @@ export default function Sidebar({
                       : 'Enrollment data not loaded. Place RIDE Oct 2024 CSVs in data/enrollment/ and run: npm run build:enrollment'}
               </div>
             )}
+            {districtBudget && (() => {
+              const hasAdjustment = districtBudget.centralAdministration !== districtBudget.centralAdministrationModel;
+              const pct = (v: number | null) => v != null ? `${(v * 100).toFixed(1)}%` : '—';
+              return (
+                <div style={{ fontSize: 13, marginBottom: 8, padding: '8px 0', borderTop: '1px solid #bbdefb' }}>
+                  <strong>Budget</strong> <span style={{ color: '#555' }}>({districtBudget.fiscalYear})</span>
+                  <div style={{ marginTop: 4, color: '#333' }}>
+                    Total expenditures: ${districtBudget.totalExpenditures.toLocaleString()}
+                  </div>
+                  <div style={{ marginTop: 2, color: '#333' }}>
+                    Central admin{hasAdjustment ? ' (model)' : ''}: ${districtBudget.centralAdministrationModel.toLocaleString()}
+                    <span style={{ color: '#777', marginLeft: 4, fontSize: 11 }}>
+                      ({pct(hasAdjustment ? districtBudget.adminShareOfTotalModel : districtBudget.adminShareOfTotal)} of total)
+                    </span>
+                  </div>
+                  {hasAdjustment && (
+                    <div style={{ marginTop: 2, fontSize: 11, color: '#b71c1c' }}>
+                      Raw extracted: ${districtBudget.centralAdministration.toLocaleString()}
+                      {' '}({pct(districtBudget.adminShareOfTotal)}) — adjusted for modeling
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: '#777', marginTop: 2 }}>
+                    District Mgmt: ${districtBudget.componentsModel.districtManagement.toLocaleString()}
+                    {' · '}
+                    Program/Ops Mgmt: ${districtBudget.componentsModel.programOperationsManagement.toLocaleString()}
+                  </div>
+                  {districtBudget.flags.length > 0 && (
+                    <div style={{ fontSize: 11, color: '#c62828', marginTop: 4 }}>
+                      Flags: {districtBudget.flags.join(', ')}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <div style={{ fontSize: 14 }}>
               Public: {districtCounts.public} · Private: {districtCounts.private}
             </div>
@@ -494,7 +1004,7 @@ export default function Sidebar({
         )}
         {!loading && !selectedDistrict && !selectedSchool && schools && (
           <div style={{ color: '#666', fontSize: 13 }}>
-            Click a district or school on the map. Use search to zoom to a result.
+            Click a district or school on the map, or use the Consolidation Sandbox above to analyze district mergers.
           </div>
         )}
       </div>

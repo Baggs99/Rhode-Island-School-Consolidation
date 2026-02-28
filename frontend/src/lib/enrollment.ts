@@ -46,7 +46,7 @@ export interface SchoolEnrollment {
 export type LeaEnrollmentMap = Record<string, DistrictEnrollment>;
 export type SchoolEnrollmentMap = Record<string, SchoolEnrollment>;
 
-/** Normalize for lookup key. Must match scripts/build-enrollment.ts */
+/** Normalize for lookup key. Must match scripts/lib/normalize.ts */
 export function normalizeForKey(s: string): string {
   if (!s || typeof s !== 'string') return '';
   let t = s

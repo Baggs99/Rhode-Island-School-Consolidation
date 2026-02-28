@@ -5,6 +5,7 @@ import { toPng } from 'html-to-image';
 import pointOnFeature from '@turf/point-on-feature';
 import area from '@turf/area';
 import type { GeoJSONFC, SchoolFeature, DistrictFeature } from '../types';
+import type { DistrictAnchorsMap } from '../lib/anchors';
 
 const RI_CENTER: [number, number] = [-71.5, 41.6];
 const RI_ZOOM = 8;
@@ -37,9 +38,12 @@ interface MapProps {
   showPrivate: boolean;
   clusterSchools: boolean;
   selectedDistrict: DistrictFeature | null;
+  selectedGeoids: string[];
   selectedSchool: SchoolFeature | null;
   highlightDistrict: DistrictFeature | null;
-  onDistrictClick: (d: DistrictFeature | null) => void;
+  anchors: DistrictAnchorsMap | null;
+  showAnchors: boolean;
+  onDistrictClick: (d: DistrictFeature | null, shiftKey: boolean) => void;
   onDistrictHover: (d: DistrictFeature | null) => void;
   onSchoolClick: (s: SchoolFeature | null) => void;
 }
@@ -176,8 +180,11 @@ export default function Map({
   showPrivate,
   clusterSchools,
   selectedDistrict,
+  selectedGeoids,
   selectedSchool,
   highlightDistrict,
+  anchors,
+  showAnchors,
   onDistrictClick,
   onDistrictHover,
   onSchoolClick,
@@ -189,6 +196,8 @@ export default function Map({
   const districtCalloutsSourceRef = useRef<string | null>(null);
   const schoolsSourceRef = useRef<string | null>(null);
   const clusterIndexRef = useRef<Supercluster<SchoolFeature, { point_count: number }> | null>(null);
+  const anchorsSourceRef = useRef<boolean>(false);
+  const anchorPopupRef = useRef<maplibregl.Popup | null>(null);
   const [exportingPng, setExportingPng] = useState(false);
   const [hoveredDistrictLabel, setHoveredDistrictLabel] = useState<{
     name: string;
@@ -290,7 +299,7 @@ export default function Map({
 
     const handleClick = (e: any) => {
       const f = e.features?.[0];
-      if (f) onDistrictClick(f as any);
+      if (f) onDistrictClick(f as any, e.originalEvent?.shiftKey ?? false);
     };
     const handleMove = (e: any) => {
       const f = e.features?.[0];
@@ -324,14 +333,18 @@ export default function Map({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.getLayer('district-highlight')) return;
-    const geoid =
+    const hoverGeoid =
       highlightDistrict?.properties?.district_geoid ??
       highlightDistrict?.properties?.geoid ??
-      selectedDistrict?.properties?.district_geoid ??
-      selectedDistrict?.properties?.geoid ??
       '';
-    map.setFilter('district-highlight', ['==', ['get', 'district_geoid'], geoid]);
-  }, [highlightDistrict, selectedDistrict]);
+    if (hoverGeoid) {
+      map.setFilter('district-highlight', ['==', ['get', 'district_geoid'], hoverGeoid]);
+    } else if (selectedGeoids.length > 0) {
+      map.setFilter('district-highlight', ['in', ['get', 'district_geoid'], ['literal', selectedGeoids]]);
+    } else {
+      map.setFilter('district-highlight', ['==', ['get', 'district_geoid'], '']);
+    }
+  }, [highlightDistrict, selectedGeoids]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -617,39 +630,6 @@ export default function Map({
     });
   }, [showPublic, showPrivate, clusterSchools]);
 
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !selectedDistrict) return;
-    const geom = selectedDistrict.geometry;
-    const coords: [number, number][] = [];
-    if (geom.type === 'Polygon') {
-      geom.coordinates.forEach((ring) => {
-        ring.forEach((c) => coords.push([c[0], c[1]]));
-      });
-    } else if (geom.type === 'MultiPolygon') {
-      geom.coordinates.forEach((poly) => {
-        poly.forEach((ring) => {
-          ring.forEach((c) => coords.push([c[0], c[1]]));
-        });
-      });
-    }
-    if (!coords.length) return;
-    let minLon = coords[0][0];
-    let maxLon = coords[0][0];
-    let minLat = coords[0][1];
-    let maxLat = coords[0][1];
-    coords.forEach(([lon, lat]) => {
-      if (lon < minLon) minLon = lon;
-      if (lon > maxLon) maxLon = lon;
-      if (lat < minLat) minLat = lat;
-      if (lat > maxLat) maxLat = lat;
-    });
-    const bounds = new maplibregl.LngLatBounds(
-      [minLon, minLat],
-      [maxLon, maxLat],
-    );
-    map.fitBounds(bounds, { padding: 40, maxZoom: 13 });
-  }, [selectedDistrict]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -662,6 +642,156 @@ export default function Map({
     map.flyTo({ center: [lon, lat], zoom: 14 });
     return () => popup.remove();
   }, [selectedSchool]);
+
+  const anchorGeoJSON = useMemo(() => {
+    if (!anchors) return null;
+    const features = Object.entries(anchors).map(([key, a]) => ({
+      type: 'Feature' as const,
+      properties: {
+        key,
+        displayName: a.displayName,
+        lat: a.lat,
+        lon: a.lon,
+        anchorType: a.anchorType,
+        schoolName: a.anchorSchool?.name ?? '',
+        enrollment: a.anchorSchool?.enrollment ?? '',
+        gradeBucket: a.anchorSchool?.gradeBucket ?? '',
+        flags: a.flags,
+      },
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [a.lon, a.lat],
+      },
+    }));
+    return { type: 'FeatureCollection' as const, features };
+  }, [anchors]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !anchorGeoJSON) return;
+
+    const addAnchorLayers = () => {
+      if (anchorsSourceRef.current) {
+        const src = map.getSource('district-anchors') as maplibregl.GeoJSONSource;
+        if (src) src.setData(anchorGeoJSON as any);
+        return;
+      }
+      map.addSource('district-anchors', {
+        type: 'geojson',
+        data: anchorGeoJSON as any,
+      });
+      map.addLayer({
+        id: 'district-anchors-circle',
+        type: 'circle',
+        source: 'district-anchors',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': [
+            'match', ['get', 'anchorType'],
+            'high_school', '#1565c0',
+            'elementary_school', '#2e7d32',
+            '#e53935',
+          ],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+        },
+        layout: { visibility: 'none' },
+      });
+      map.addLayer({
+        id: 'district-anchors-label',
+        type: 'symbol',
+        source: 'district-anchors',
+        layout: {
+          visibility: 'none',
+          'text-field': ['get', 'displayName'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 10,
+          'text-offset': [0, 1.4],
+          'text-anchor': 'top',
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
+        },
+        paint: {
+          'text-color': '#1a237e',
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 1.5,
+        },
+      });
+      anchorsSourceRef.current = true;
+    };
+
+    if (map.isStyleLoaded()) {
+      addAnchorLayers();
+    } else {
+      map.once('load', addAnchorLayers);
+    }
+  }, [anchorGeoJSON]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const vis = showAnchors ? 'visible' : 'none';
+    ['district-anchors-circle', 'district-anchors-label'].forEach((id) => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
+    });
+
+    if (!showAnchors) {
+      if (anchorPopupRef.current) {
+        anchorPopupRef.current.remove();
+        anchorPopupRef.current = null;
+      }
+      return;
+    }
+
+    const handleAnchorClick = (e: maplibregl.MapLayerMouseEvent) => {
+      const f = e.features?.[0];
+      if (!f) return;
+      const props = f.properties as Record<string, unknown>;
+      const displayName = String(props.displayName ?? '');
+      const key = String(props.key ?? '');
+      const lat = Number(props.lat);
+      const lon = Number(props.lon);
+      const anchorType = String(props.anchorType ?? '');
+      const schoolName = String(props.schoolName ?? '');
+      const enrollment = props.enrollment !== '' && props.enrollment != null ? Number(props.enrollment) : null;
+      let flags: string[] = [];
+      try {
+        const raw = props.flags;
+        flags = typeof raw === 'string' ? JSON.parse(raw) : Array.isArray(raw) ? raw as string[] : [];
+      } catch { /* empty */ }
+
+      const schoolLine = schoolName
+        ? `School: ${escapeHtml(schoolName)}${enrollment != null ? ` (${enrollment.toLocaleString()} enrolled)` : ''}<br/>`
+        : '';
+
+      if (anchorPopupRef.current) anchorPopupRef.current.remove();
+      anchorPopupRef.current = new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
+        .setLngLat(e.lngLat)
+        .setHTML(`
+          <div style="font-family: sans-serif; font-size: 13px;">
+            <strong>${escapeHtml(displayName)}</strong><br/>
+            Type: ${escapeHtml(anchorType.replace(/_/g, ' '))}<br/>
+            ${schoolLine}
+            Lat/Lon: ${lat.toFixed(5)}, ${lon.toFixed(5)}<br/>
+            Flags: ${flags.length ? escapeHtml(flags.join(', ')) : 'none'}
+          </div>
+        `)
+        .addTo(map);
+    };
+
+    const handleEnter = () => { map.getCanvas().style.cursor = 'pointer'; };
+    const handleLeave = () => { map.getCanvas().style.cursor = ''; };
+
+    map.on('click', 'district-anchors-circle', handleAnchorClick);
+    map.on('mouseenter', 'district-anchors-circle', handleEnter);
+    map.on('mouseleave', 'district-anchors-circle', handleLeave);
+
+    return () => {
+      map.off('click', 'district-anchors-circle', handleAnchorClick);
+      map.off('mouseenter', 'district-anchors-circle', handleEnter);
+      map.off('mouseleave', 'district-anchors-circle', handleLeave);
+    };
+  }, [showAnchors]);
 
   const handleExportGeoJSON = useCallback(() => {
     if (!schools?.features?.length) return;

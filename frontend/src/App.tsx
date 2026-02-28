@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import Map from './components/Map';
+import MapView from './components/Map';
 import Sidebar from './components/Sidebar';
 import type { GeoJSONFC, SchoolFeature, DistrictFeature } from './types';
-import type { LeaEnrollmentMap, SchoolEnrollmentMap } from './lib/enrollment';
+import { districtKey, type LeaEnrollmentMap, type SchoolEnrollmentMap } from './lib/enrollment';
+import type { BudgetsMap } from './lib/budgets';
+import type { DistrictAnchorsMap } from './lib/anchors';
 
 const API_BASE = '';
 
@@ -18,6 +20,8 @@ export default function App() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState<DistrictFeature | null>(null);
+  const [selectedDistrictKeys, setSelectedDistrictKeys] = useState<string[]>([]);
+  const [sandboxDistrictKeys, setSandboxDistrictKeys] = useState<string[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<SchoolFeature | null>(null);
   const [highlightDistrict, setHighlightDistrict] = useState<DistrictFeature | null>(null);
   const [showDistricts, setShowDistricts] = useState(true);
@@ -31,6 +35,9 @@ export default function App() {
   const [leaEnrollment, setLeaEnrollment] = useState<LeaEnrollmentMap | null>(null);
   const [schoolEnrollment, setSchoolEnrollment] = useState<SchoolEnrollmentMap | null>(null);
   const [enrollmentLoadError, setEnrollmentLoadError] = useState<string | null>(null);
+  const [budgets, setBudgets] = useState<BudgetsMap | null>(null);
+  const [anchors, setAnchors] = useState<DistrictAnchorsMap | null>(null);
+  const [showAnchors, setShowAnchors] = useState(false);
 
   const loadDistricts = useCallback(async () => {
     const res = await fetch(`${API_BASE}/api/districts`);
@@ -102,6 +109,61 @@ export default function App() {
     load();
   }, []);
 
+  useEffect(() => {
+    fetch('/budgets/budgets.json')
+      .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
+      .then((data: BudgetsMap) => setBudgets(data))
+      .catch((e) => console.warn('Budgets not loaded:', e));
+  }, []);
+
+  useEffect(() => {
+    fetch('/centroids/district-anchors.json')
+      .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
+      .then((data: DistrictAnchorsMap) => setAnchors(data))
+      .catch((e) => console.warn('Anchors not loaded:', e));
+  }, []);
+
+  const keyToGeoid = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!districts?.features) return m;
+    for (const f of districts.features) {
+      const name = f.properties.district_name ?? f.properties.name ?? '';
+      const geoid = f.properties.district_geoid ?? f.properties.geoid ?? '';
+      if (name && geoid) m.set(districtKey(name), geoid);
+    }
+    return m;
+  }, [districts]);
+
+  const selectedGeoids = useMemo(
+    () => selectedDistrictKeys.map((k) => keyToGeoid.get(k) ?? '').filter(Boolean),
+    [selectedDistrictKeys, keyToGeoid],
+  );
+
+  const handleDistrictClick = useCallback(
+    (d: DistrictFeature | null, shiftKey: boolean) => {
+      if (!d) return;
+      const name = d.properties.district_name ?? d.properties.name ?? '';
+      const key = districtKey(name);
+      setSelectedSchool(null);
+      setSelectedDistrict(d);
+      if (shiftKey) {
+        setSelectedDistrictKeys((prev) =>
+          prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+        );
+      } else {
+        setSelectedDistrictKeys([key]);
+      }
+    },
+    [],
+  );
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedSchool(null);
+    setSelectedDistrict(null);
+    setSelectedDistrictKeys([]);
+    setHighlightDistrict(null);
+  }, []);
+
   const filteredDistricts = useMemo(() => {
     if (!districts?.features?.length) return districts;
     const levels: string[] = [];
@@ -125,6 +187,8 @@ export default function App() {
         leaEnrollment={leaEnrollment}
         schoolEnrollment={schoolEnrollment}
         enrollmentLoadError={enrollmentLoadError}
+        budgets={budgets}
+        anchors={anchors}
         loading={loading}
         error={error}
         filters={filters}
@@ -132,6 +196,7 @@ export default function App() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         selectedDistrict={selectedDistrict}
+        selectedDistrictKeys={selectedDistrictKeys}
         selectedSchool={selectedSchool}
         showDistricts={showDistricts}
         setShowDistricts={setShowDistricts}
@@ -141,18 +206,24 @@ export default function App() {
         setClusterSchools={setClusterSchools}
         districtLevelFilter={districtLevelFilter}
         setDistrictLevelFilter={setDistrictLevelFilter}
+        showAnchors={showAnchors}
+        setShowAnchors={setShowAnchors}
         onSearchSelect={(school, district) => {
-          setSelectedSchool(school);
+          setSelectedSchool(school ?? null);
           setSelectedDistrict(district ?? null);
           setHighlightDistrict(district ?? null);
+          if (district) {
+            const name = district.properties.district_name ?? district.properties.name ?? '';
+            setSelectedDistrictKeys([districtKey(name)]);
+          } else {
+            setSelectedDistrictKeys([]);
+          }
         }}
-        onClearSelection={() => {
-          setSelectedSchool(null);
-          setSelectedDistrict(null);
-          setHighlightDistrict(null);
-        }}
+        onClearSelection={handleClearSelection}
+        sandboxDistrictKeys={sandboxDistrictKeys}
+        setSandboxDistrictKeys={setSandboxDistrictKeys}
       />
-      <Map
+      <MapView
         districts={filteredDistricts}
         schools={schools}
         loading={loading}
@@ -162,12 +233,16 @@ export default function App() {
         showPrivate={filters.private}
         clusterSchools={clusterSchools}
         selectedDistrict={selectedDistrict}
+        selectedGeoids={selectedGeoids}
         selectedSchool={selectedSchool}
         highlightDistrict={highlightDistrict}
-        onDistrictClick={setSelectedDistrict}
+        anchors={anchors}
+        showAnchors={showAnchors}
+        onDistrictClick={handleDistrictClick}
         onDistrictHover={setHighlightDistrict}
         onSchoolClick={setSelectedSchool}
       />
     </div>
   );
 }
+
