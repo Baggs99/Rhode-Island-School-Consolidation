@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import MapView from './components/Map';
 import Sidebar from './components/Sidebar';
 import type { GeoJSONFC, SchoolFeature, DistrictFeature } from './types';
@@ -6,11 +6,21 @@ import { districtKey, type LeaEnrollmentMap, type SchoolEnrollmentMap } from './
 import type { BudgetsMap } from './lib/budgets';
 import type { DistrictAnchorsMap } from './lib/anchors';
 
-const API_BASE = '';
+async function fetchJson<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  const ct = res.headers.get('content-type') ?? '';
+  if (!res.ok || ct.includes('text/html')) {
+    const body = await res.text();
+    throw new Error(
+      `Failed to load ${url} — status ${res.status}, content-type: ${ct}, body: ${body.slice(0, 120)}`,
+    );
+  }
+  return (await res.json()) as T;
+}
 
 export default function App() {
   const [districts, setDistricts] = useState<GeoJSONFC<DistrictFeature> | null>(null);
-  const [schools, setSchools] = useState<GeoJSONFC<SchoolFeature> | null>(null);
+  const [allSchools, setAllSchools] = useState<GeoJSONFC<SchoolFeature> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
@@ -39,64 +49,47 @@ export default function App() {
   const [anchors, setAnchors] = useState<DistrictAnchorsMap | null>(null);
   const [showAnchors, setShowAnchors] = useState(false);
 
-  const loadDistricts = useCallback(async () => {
-    const res = await fetch(`${API_BASE}/api/districts`);
-    if (!res.ok) throw new Error('Failed to load districts');
-    const data = await res.json();
-    setDistricts(data);
-  }, []);
-
-  const loadSchools = useCallback(async () => {
-    const types: string[] = [];
-    if (filters.public) types.push('public');
-    if (filters.private) types.push('private');
-    const gradeParam = filters.grade.length ? filters.grade.join(',') : undefined;
-    const params = new URLSearchParams();
-    params.set('type', types.join(','));
-    if (gradeParam) params.set('grade', gradeParam);
-    if (searchQuery.trim()) params.set('q', searchQuery.trim());
-    const res = await fetch(`${API_BASE}/api/schools?${params}`);
-    if (!res.ok) throw new Error('Failed to load schools');
-    const data = await res.json();
-    setSchools(data);
-  }, [filters.public, filters.private, filters.grade, searchQuery]);
-
   useEffect(() => {
     (async () => {
       setLoading(true);
       setError(null);
       try {
-        await loadDistricts();
+        const [distData, schoolData] = await Promise.all([
+          fetchJson<GeoJSONFC<DistrictFeature>>('/geo/districts.geojson'),
+          fetchJson<GeoJSONFC<SchoolFeature>>('/geo/schools.geojson'),
+        ]);
+        setDistricts(distData);
+        setAllSchools(schoolData);
       } catch (e) {
         setError(String(e));
       } finally {
         setLoading(false);
       }
     })();
-  }, [loadDistricts]);
+  }, []);
 
-  useEffect(() => {
-    if (!loading) loadSchools();
-  }, [loading, loadSchools]);
-
-  useEffect(() => {
-    const leaUrl = '/enrollment/ri_lea_enrollment_2024-10.json';
-    const schoolUrl = '/enrollment/ri_school_enrollment_2024-10.json';
-    if (typeof window !== 'undefined') {
-      console.log('enrollment fetch url', leaUrl);
+  const schools = useMemo(() => {
+    if (!allSchools?.features) return allSchools;
+    let features = allSchools.features;
+    const types: string[] = [];
+    if (filters.public) types.push('public');
+    if (filters.private) types.push('private');
+    if (types.length > 0) {
+      features = features.filter((f) => types.includes(f.properties.school_type));
     }
-    const load = async () => {
+    if (filters.grade.length > 0) {
+      features = features.filter((f) => filters.grade.includes(f.properties.grade_bucket));
+    }
+    return { type: 'FeatureCollection' as const, features };
+  }, [allSchools, filters.public, filters.private, filters.grade]);
+
+  useEffect(() => {
+    (async () => {
       try {
-        const leaRes = await fetch(leaUrl);
-        if (!leaRes.ok) {
-          throw new Error(`Fetch failed ${leaRes.status} ${leaRes.statusText} for ${leaUrl}. Did build:enrollment run? Output goes to frontend/public/enrollment/`);
-        }
-        const lea = (await leaRes.json()) as LeaEnrollmentMap;
-        const schoolRes = await fetch(schoolUrl);
-        if (!schoolRes.ok) {
-          throw new Error(`Fetch failed ${schoolRes.status} ${schoolRes.statusText} for ${schoolUrl}`);
-        }
-        const school = (await schoolRes.json()) as SchoolEnrollmentMap;
+        const [lea, school] = await Promise.all([
+          fetchJson<LeaEnrollmentMap>('/enrollment/ri_lea_enrollment_2024-10.json'),
+          fetchJson<SchoolEnrollmentMap>('/enrollment/ri_school_enrollment_2024-10.json'),
+        ]);
         setLeaEnrollment(lea);
         setSchoolEnrollment(school);
         setEnrollmentLoadError(null);
@@ -105,21 +98,18 @@ export default function App() {
         setEnrollmentLoadError(msg);
         console.error('Enrollment load error:', msg);
       }
-    };
-    load();
+    })();
   }, []);
 
   useEffect(() => {
-    fetch('/budgets/budgets.json')
-      .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
-      .then((data: BudgetsMap) => setBudgets(data))
+    fetchJson<BudgetsMap>('/budgets/budgets.json')
+      .then((data) => setBudgets(data))
       .catch((e) => console.warn('Budgets not loaded:', e));
   }, []);
 
   useEffect(() => {
-    fetch('/centroids/district-anchors.json')
-      .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
-      .then((data: DistrictAnchorsMap) => setAnchors(data))
+    fetchJson<DistrictAnchorsMap>('/centroids/district-anchors.json')
+      .then((data) => setAnchors(data))
       .catch((e) => console.warn('Anchors not loaded:', e));
   }, []);
 

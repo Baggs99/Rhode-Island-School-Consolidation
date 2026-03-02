@@ -263,15 +263,7 @@ export default function Map({
         source: 'districts',
         paint: {
           'line-color': '#1e40af',
-          'line-width': [
-            'match',
-            ['coalesce', ['get', 'district_level'], 'unified'],
-            'unified',
-            3,
-            'secondary',
-            2,
-            1.5,
-          ],
+          'line-width': 2.5,
         },
       },
       beforeSchoolLayer
@@ -878,9 +870,44 @@ export default function Map({
     }
   }, []);
 
+  const [baseMapVisible, setBaseMapVisible] = useState(true);
+
+  const toggleBaseMap = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const next = !baseMapVisible;
+    setBaseMapVisible(next);
+    if (map.getLayer('osm')) {
+      map.setLayoutProperty('osm', 'visibility', next ? 'visible' : 'none');
+    }
+    const bg = next ? 'transparent' : '#f0f0f0';
+    map.getCanvas().style.background = bg;
+    map.getContainer().style.background = bg;
+  }, [baseMapVisible]);
+
   return (
     <div style={{ flex: 1, position: 'relative' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      <button
+        onClick={toggleBaseMap}
+        style={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          padding: '6px 12px',
+          fontSize: 12,
+          fontWeight: 500,
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          background: baseMapVisible ? '#fff' : '#1976d2',
+          color: baseMapVisible ? '#333' : '#fff',
+          cursor: 'pointer',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+          zIndex: 10,
+        }}
+      >
+        {baseMapVisible ? 'Hide Base Map' : 'Show Base Map'}
+      </button>
       {hoveredDistrictLabel && (
         <div
           style={{
