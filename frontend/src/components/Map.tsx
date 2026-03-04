@@ -913,7 +913,7 @@ export default function Map({
             zIndex: 10,
           }}
         >
-          Panel
+          Calculator Panel
         </button>
       )}
       <button

@@ -782,7 +782,7 @@ export default function Sidebar({
                 fontWeight: 500,
               }}
             >
-              + Add map selection
+              + Add map selection{mapDistrictKey ? ` (${getDisplayName(mapDistrictKey)})` : ''}
             </button>
             <button
               onClick={() => setSandboxDistrictKeys([])}
