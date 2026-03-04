@@ -13,6 +13,9 @@ import type { DistrictAnchorsMap } from '../lib/anchors';
 import { computeConsolidationV1, type ConsolidationParamsV1 } from '../lib/consolidationV1';
 
 interface SidebarProps {
+  isMobile?: boolean;
+  mobileSidebarOpen?: boolean;
+  onMobileClose?: () => void;
   districts: GeoJSONFC<DistrictFeature> | null;
   schools: GeoJSONFC<SchoolFeature> | null;
   loading: boolean;
@@ -116,6 +119,9 @@ const $pp = (n: number) => `$${Math.round(n).toLocaleString()}`;
 const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 
 export default function Sidebar({
+  isMobile = false,
+  mobileSidebarOpen = true,
+  onMobileClose,
   districts,
   schools,
   loading,
@@ -329,21 +335,33 @@ export default function Sidebar({
     return null;
   })();
 
-  return (
-    <div
-      style={{
-        width: 340,
-        minWidth: 320,
-        background: '#fff',
-        boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Fixed title */}
-      <div style={{ padding: '12px 16px 8px', borderBottom: '1px solid #eee', flexShrink: 0 }}>
-        <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>RI District Consolidation Calculator</h1>
+  const overlayMode = isMobile;
+  const isVisible = !overlayMode || mobileSidebarOpen;
+
+  const sidebarContent = (
+    <>
+      {/* Fixed title + close button on mobile */}
+      <div style={{ padding: '12px 16px 8px', borderBottom: '1px solid #eee', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600, flex: 1, minWidth: 0 }}>RI District Consolidation Calculator</h1>
+        {overlayMode && onMobileClose && (
+          <button
+            onClick={onMobileClose}
+            title="Close panel"
+            aria-label="Close panel"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 20,
+              lineHeight: 1,
+              color: '#666',
+              padding: '4px 8px',
+              flexShrink: 0,
+            }}
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Selected summary bar — sticky inside scroll area is handled below */}
@@ -623,6 +641,7 @@ export default function Sidebar({
       <div style={{ padding: 16 }}>
         {/* ── Consolidation Sandbox (V1) ── */}
         <div
+          className="consolidation-sandbox"
           style={{
             background: '#fafafa',
             border: '1px solid #e0e0e0',
@@ -738,7 +757,7 @@ export default function Sidebar({
           )}
 
           {/* Convenience buttons */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+          <div className="sandbox-buttons" style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
             <button
               onClick={() => {
                 if (mapDistrictKey) addToSandbox(mapDistrictKey);
@@ -791,7 +810,7 @@ export default function Sidebar({
           )}
 
           {/* Parameter controls */}
-          <div style={{ marginBottom: 12, padding: '8px 0', borderTop: '1px solid #e0e0e0' }}>
+          <div className="sandbox-params" style={{ marginBottom: 12, padding: '8px 0', borderTop: '1px solid #e0e0e0' }}>
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>Parameters</div>
             <label style={{ display: 'block', marginBottom: 6, fontSize: 12 }}>
               Smaller district(s) admin reduction: {Math.round(consolidationParams.adminReductionRate * 100)}%
@@ -1128,6 +1147,56 @@ export default function Sidebar({
         )}
       </div>
       </div>
+    </>
+  );
+
+  const baseStyles: React.CSSProperties = {
+    background: '#fff',
+    boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  };
+
+  if (overlayMode) {
+    return (
+      <>
+        {isVisible && onMobileClose && (
+          <div
+            role="presentation"
+            onClick={onMobileClose}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 999,
+              background: 'rgba(0,0,0,0.3)',
+            }}
+          />
+        )}
+        <div
+          style={{
+            ...baseStyles,
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: '85%',
+            maxWidth: 340,
+            transform: isVisible ? 'translateX(0)' : 'translateX(-100%)',
+            transition: 'transform 0.25s ease',
+            zIndex: 1000,
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
+        >
+          {sidebarContent}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div style={{ ...baseStyles, width: 340, minWidth: 320 }}>
+      {sidebarContent}
     </div>
   );
 }

@@ -8,3 +8,23 @@ html, body, #root {
   height: 100%;
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
+
+/* Mobile: Consolidation Sandbox polish */
+@media (max-width: 768px) {
+  .consolidation-sandbox {
+    padding: 10px !important;
+    margin-bottom: 12px !important;
+  }
+  .consolidation-sandbox .sandbox-params label {
+    display: block !important;
+    margin-bottom: 8px !important;
+  }
+  .consolidation-sandbox .sandbox-buttons {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .consolidation-sandbox .sandbox-buttons button {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+}

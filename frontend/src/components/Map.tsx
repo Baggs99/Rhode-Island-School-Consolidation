@@ -29,6 +29,9 @@ const BASEMAP_STYLE = {
 };
 
 interface MapProps {
+  isMobile?: boolean;
+  onOpenPanel?: () => void;
+  mobilePanelVisible?: boolean;
   districts: GeoJSONFC<DistrictFeature> | null;
   schools: GeoJSONFC<SchoolFeature> | null;
   loading: boolean;
@@ -171,6 +174,9 @@ function applySchoolVisibilityAndFilters(
 }
 
 export default function Map({
+  isMobile = false,
+  onOpenPanel,
+  mobilePanelVisible = false,
   districts,
   schools,
   loading,
@@ -888,6 +894,28 @@ export default function Map({
   return (
     <div style={{ flex: 1, position: 'relative' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      {isMobile && mobilePanelVisible && onOpenPanel && (
+        <button
+          onClick={onOpenPanel}
+          style={{
+            position: 'absolute',
+            top: 'max(10px, env(safe-area-inset-top, 0px))',
+            left: 'max(10px, env(safe-area-inset-left, 0px))',
+            padding: '8px 14px',
+            fontSize: 14,
+            fontWeight: 600,
+            border: '1px solid #ccc',
+            borderRadius: 6,
+            background: '#fff',
+            color: '#333',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            zIndex: 10,
+          }}
+        >
+          Panel
+        </button>
+      )}
       <button
         onClick={toggleBaseMap}
         style={{

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import MapView from './components/Map';
 import Sidebar from './components/Sidebar';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import type { GeoJSONFC, SchoolFeature, DistrictFeature } from './types';
 import { districtKey, type LeaEnrollmentMap, type SchoolEnrollmentMap } from './lib/enrollment';
 import type { BudgetsMap } from './lib/budgets';
@@ -48,6 +49,19 @@ export default function App() {
   const [budgets, setBudgets] = useState<BudgetsMap | null>(null);
   const [anchors, setAnchors] = useState<DistrictAnchorsMap | null>(null);
   const [showAnchors, setShowAnchors] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('mobileSidebarOpen') === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('mobileSidebarOpen', mobileSidebarOpen ? '1' : '0');
+    } catch { /* noop */ }
+  }, [mobileSidebarOpen]);
 
   useEffect(() => {
     (async () => {
@@ -170,8 +184,19 @@ export default function App() {
   }, [districts, districtLevelFilter]);
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+    <div
+      style={{
+        display: 'flex',
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
       <Sidebar
+        isMobile={isMobile}
+        mobileSidebarOpen={isMobile ? mobileSidebarOpen : true}
+        onMobileClose={() => setMobileSidebarOpen(false)}
         districts={districts}
         schools={schools}
         leaEnrollment={leaEnrollment}
@@ -214,6 +239,9 @@ export default function App() {
         setSandboxDistrictKeys={setSandboxDistrictKeys}
       />
       <MapView
+        isMobile={isMobile}
+        onOpenPanel={() => setMobileSidebarOpen(true)}
+        mobilePanelVisible={isMobile && !mobileSidebarOpen}
         districts={filteredDistricts}
         schools={schools}
         loading={loading}
